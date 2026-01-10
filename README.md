@@ -8,6 +8,10 @@ Desktop budget calendar built with Tkinter. Track income and expenses by day, vi
 - Dark mode toggle with Windows dark titlebar request
 - Data stored locally in JSON
 
+## Screenshots
+![Screenshot 1](docs/Screenshot1.png)
+![Screenshot 2](docs/Screenshot2.png)
+
 ## Requirements
 - Python 3.10+ (tested with Python 3.12)
 
@@ -34,4 +38,3 @@ icon.ico          # app icon
 
 ## Notes
 - The Windows titlebar dark mode request depends on OS theme/settings.
-
