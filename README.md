@@ -1,6 +1,6 @@
 # Budget Calendar
 
-Desktop budget calendar built with Tkinter. Track income and expenses by day, view monthly totals and a running balance, and switch between light and dark themes.
+A simple Windows desktop budget calendar built with Tkinter. Track income and expenses by day, view monthly totals and a running balance, with light and dark themes.
 
 ## Features
 - Month calendar with day-level income/expense entries

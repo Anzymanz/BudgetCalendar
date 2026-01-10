@@ -5,6 +5,7 @@ from datetime import datetime, date
 import json
 import os
 import ctypes
+import shutil
 from decimal import Decimal, InvalidOperation
 from tkinter import font
 
@@ -12,8 +13,14 @@ class BudgetCalendar:
     def __init__(self, root):
         self.root = root
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.data_file = os.path.join(base_dir, "budget_data.json")
         self.icon_path = os.path.join(base_dir, "icon.ico")
+        appdata_dir = os.getenv("APPDATA")
+        self.data_dir = os.path.join(appdata_dir, "BudgetCalendar") if appdata_dir else base_dir
+        os.makedirs(self.data_dir, exist_ok=True)
+        self.data_file = os.path.join(self.data_dir, "budget_data.json")
+        legacy_data_file = os.path.join(base_dir, "budget_data.json")
+        if not os.path.exists(self.data_file) and os.path.exists(legacy_data_file):
+            shutil.copy2(legacy_data_file, self.data_file)
 
         self.root.title("Budget Calendar")
         self.set_window_icon(self.root)
@@ -396,6 +403,7 @@ class BudgetCalendar:
                 self.data = {'income': {}, 'expenses': {}}
         else:
             self.data = {'income': {}, 'expenses': {}}
+            self.save_data()
 
         if not isinstance(self.data, dict):
             self.data = {'income': {}, 'expenses': {}}
