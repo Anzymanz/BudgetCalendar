@@ -20,6 +20,14 @@ A simple Windows desktop budget calendar built with Tkinter. Track income and ex
 py budget.pyw
 ```
 
+## Download
+[Download](https://github.com/Anzymanz/BudgetCalendar/releases/tag/v0.1)
+
+## Run (EXE)
+```powershell
+.\budget.exe
+```
+
 ## Build (single EXE)
 ```powershell
 pyinstaller --onefile --windowed --icon icon.ico budget.pyw
