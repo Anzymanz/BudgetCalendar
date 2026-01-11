@@ -1,6 +1,6 @@
 # Budget Calendar
 
-A simple Windows desktop budget calendar built with Tkinter. Track income and expenses by day, view monthly totals and a running balance, with light and dark themes.
+A simple Windows desktop budget calendar built with Tkinter. Tracks income and expenses by day, monthly totals and a running balance.
 
 ## Features
 - Month calendar with day-level income/expense entries
@@ -22,11 +22,6 @@ py budget.pyw
 
 ## Download
 [Download](https://github.com/Anzymanz/BudgetCalendar/releases/tag/v0.1)
-
-## Run (EXE)
-```powershell
-.\budget.exe
-```
 
 ## Build (single EXE)
 ```powershell
