@@ -215,7 +215,6 @@ class BudgetCalendar:
         self.day_entry_window = tk.Toplevel(self.root)
         self.day_entry_window.title(f"Entries for {self.month}/{day}/{self.year}")
         self.set_window_icon(self.day_entry_window)
-        self.position_popup(self.day_entry_window, width=300, height=250)
 
         # Frame for income entries
         income_frame = ttk.Frame(self.day_entry_window)
@@ -253,6 +252,7 @@ class BudgetCalendar:
         ttk.Button(self.day_entry_window, text="Add Income", command=lambda: self.add_entry(day_key, 'income')).pack(pady=5)
         ttk.Button(self.day_entry_window, text="Add Expense", command=lambda: self.add_entry(day_key, 'expenses')).pack(pady=5)
         self.apply_popup_theme(self.day_entry_window)
+        self.position_popup(self.day_entry_window)
 
     def add_entry(self, day_key, entry_type):
         def save_entry():
@@ -606,8 +606,14 @@ class BudgetCalendar:
         except Exception:
             pass
 
-    def position_popup(self, window, width, height):
+    def position_popup(self, window, width=None, height=None):
         window.update_idletasks()
+        req_w = window.winfo_reqwidth()
+        req_h = window.winfo_reqheight()
+        screen_w = window.winfo_screenwidth()
+        screen_h = window.winfo_screenheight()
+        width = width or max(240, min(req_w, screen_w - 40))
+        height = height or max(200, min(req_h, screen_h - 80))
         root_x = self.root.winfo_rootx()
         root_y = self.root.winfo_rooty()
         root_w = self.root.winfo_width()
