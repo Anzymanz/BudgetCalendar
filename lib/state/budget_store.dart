@@ -146,6 +146,7 @@ class BudgetStore extends ChangeNotifier {
     required this.showRunningBalance,
     required this.showMonthBalance,
     required this.showDayRunningBalanceOnHover,
+    required this.minimizeToTray,
     required this.weekStartDay,
     required this.highContrastMode,
     required this.textScaleFactor,
@@ -175,6 +176,7 @@ class BudgetStore extends ChangeNotifier {
   bool showRunningBalance;
   bool showMonthBalance;
   bool showDayRunningBalanceOnHover;
+  bool minimizeToTray;
   int weekStartDay;
 
   bool highContrastMode;
@@ -241,6 +243,7 @@ class BudgetStore extends ChangeNotifier {
       'show_day_running_balance_on_hover',
       true,
     );
+    final minimizeToTray = _getBool(settings, 'minimize_to_tray', false);
     final weekStartDay = _sanitizeWeekStart(
       _getInt(settings, 'week_start_day', 1),
     );
@@ -283,6 +286,7 @@ class BudgetStore extends ChangeNotifier {
       showRunningBalance: showRunningBalance,
       showMonthBalance: showMonthBalance,
       showDayRunningBalanceOnHover: showDayRunningBalanceOnHover,
+      minimizeToTray: minimizeToTray,
       weekStartDay: weekStartDay,
       highContrastMode: highContrastMode,
       textScaleFactor: textScaleFactor,
@@ -311,6 +315,7 @@ class BudgetStore extends ChangeNotifier {
       showRunningBalance: true,
       showMonthBalance: true,
       showDayRunningBalanceOnHover: true,
+      minimizeToTray: false,
       weekStartDay: 1,
       highContrastMode: false,
       textScaleFactor: 1.0,
@@ -405,6 +410,7 @@ class BudgetStore extends ChangeNotifier {
       'show_running_balance': showRunningBalance,
       'show_month_balance': showMonthBalance,
       'show_day_running_balance_on_hover': showDayRunningBalanceOnHover,
+      'minimize_to_tray': minimizeToTray,
       'week_start_day': weekStartDay,
       'high_contrast_mode': highContrastMode,
       'text_scale_factor': textScaleFactor,
@@ -756,11 +762,15 @@ class BudgetStore extends ChangeNotifier {
     bool? showRunning,
     bool? showMonth,
     bool? showDayRunningBalanceOnHover,
+    bool? minimizeToTray,
   }) async {
     if (showRunning != null) showRunningBalance = showRunning;
     if (showMonth != null) showMonthBalance = showMonth;
     if (showDayRunningBalanceOnHover != null) {
       this.showDayRunningBalanceOnHover = showDayRunningBalanceOnHover;
+    }
+    if (minimizeToTray != null) {
+      this.minimizeToTray = minimizeToTray;
     }
     await _save();
     notifyListeners();
@@ -887,6 +897,7 @@ class BudgetStore extends ChangeNotifier {
         'show_day_running_balance_on_hover',
         showDayRunningBalanceOnHover,
       );
+      minimizeToTray = _getBool(settings, 'minimize_to_tray', minimizeToTray);
       weekStartDay = _sanitizeWeekStart(
         _getInt(settings, 'week_start_day', weekStartDay),
       );

@@ -20,6 +20,7 @@ void main() {
       expect(store.showMonthBalance, true);
       expect(store.showRunningBalance, true);
       expect(store.showDayRunningBalanceOnHover, true);
+      expect(store.minimizeToTray, false);
       expect(store.weekStartDay, 1);
       expect(store.highContrastMode, false);
       expect(store.textScaleFactor, 1.0);
@@ -37,6 +38,7 @@ void main() {
       expect(settings['high_contrast_mode'], false);
       expect(settings['text_scale_factor'], 1.0);
       expect(settings['show_day_running_balance_on_hover'], true);
+      expect(settings['minimize_to_tray'], false);
       expect(settings['currency_symbol'], '£');
       expect(settings['starting_balance_pennies'], 0);
       expect(settings['monthly_budget_pennies'], 0);
@@ -80,10 +82,14 @@ void main() {
       expect(store.panelOrderIds, ['calendar', 'totals', 'date']);
     });
 
-    test('updateDisplaySettings toggles day hover running balance', () async {
+    test('updateDisplaySettings toggles day hover and tray settings', () async {
       final store = BudgetStore.inMemory();
-      await store.updateDisplaySettings(showDayRunningBalanceOnHover: false);
+      await store.updateDisplaySettings(
+        showDayRunningBalanceOnHover: false,
+        minimizeToTray: true,
+      );
       expect(store.showDayRunningBalanceOnHover, false);
+      expect(store.minimizeToTray, true);
     });
   });
 
@@ -167,6 +173,7 @@ void main() {
           'monthly_budget_pennies': 200000,
           'week_start_day': 0,
           'show_day_running_balance_on_hover': false,
+          'minimize_to_tray': true,
           'both_color_light': '#112233',
           'both_color_dark': '#334455',
           'panel_order': ['calendar', 'date', 'totals'],
@@ -182,6 +189,7 @@ void main() {
       expect(store.monthlyBudgetPennies, 200000);
       expect(store.weekStartDay, 0);
       expect(store.showDayRunningBalanceOnHover, false);
+      expect(store.minimizeToTray, true);
       expect(store.bothColorLight, const Color(0xFF112233));
       expect(store.bothColorDark, const Color(0xFF334455));
       expect(store.panelOrderIds, ['calendar', 'date', 'totals']);

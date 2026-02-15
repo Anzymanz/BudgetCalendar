@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'state/budget_store.dart';
@@ -363,7 +364,7 @@ class BudgetCalendarHome extends StatefulWidget {
 }
 
 class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
-    with WindowListener {
+    with WindowListener, TrayListener {
   late DateTime _focusedMonth;
   late PageController _pageController;
   late DateTime _referenceMonth; // Fixed reference for page calculations
@@ -380,6 +381,11 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   bool _windowSizingInitialized = false;
   Timer? _windowPersistDebounce;
   String _lastResizeLayoutKey = '';
+  bool _trayInitialized = false;
+  bool _lastMinimizeToTray = false;
+
+  static const String _trayMenuShowKey = 'show_window';
+  static const String _trayMenuExitKey = 'exit_app';
 
   @override
   void initState() {
@@ -390,9 +396,13 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     _pageController = PageController(initialPage: _initialPageIndex);
     _loadPanelOrderFromStore();
     _lastResizeLayoutKey = _resizeLayoutKey();
+    _lastMinimizeToTray = widget.store.minimizeToTray;
     widget.store.addListener(_onStoreChanged);
     if (_isWindowsDesktop) {
       _initWindowSizing();
+      if (_lastMinimizeToTray) {
+        unawaited(_initTray());
+      }
     }
   }
 
@@ -401,6 +411,10 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     widget.store.removeListener(_onStoreChanged);
     if (_isWindowsDesktop) {
       windowManager.removeListener(this);
+      if (_trayInitialized) {
+        trayManager.removeListener(this);
+        unawaited(trayManager.destroy());
+      }
     }
     _windowPersistDebounce?.cancel();
     _pageController.dispose();
@@ -409,12 +423,110 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
 
   void _onStoreChanged() {
     if (!_isWindowsDesktop) return;
+    if (_lastMinimizeToTray != widget.store.minimizeToTray) {
+      _lastMinimizeToTray = widget.store.minimizeToTray;
+      unawaited(_syncTrayPreference());
+    }
     final key = _resizeLayoutKey();
     if (key == _lastResizeLayoutKey) {
       return;
     }
     _lastResizeLayoutKey = key;
     _scheduleWindowResizeToContent();
+  }
+
+  Future<void> _initTray() async {
+    if (!_isWindowsDesktop || _trayInitialized) return;
+    trayManager.addListener(this);
+    await trayManager.setIcon('assets/tray_icon.ico');
+    await trayManager.setToolTip('BudgetCalendar');
+    await trayManager.setContextMenu(
+      Menu(
+        items: [
+          MenuItem(key: _trayMenuShowKey, label: 'Show BudgetCalendar'),
+          MenuItem.separator(),
+          MenuItem(key: _trayMenuExitKey, label: 'Exit'),
+        ],
+      ),
+    );
+    _trayInitialized = true;
+  }
+
+  Future<void> _syncTrayPreference() async {
+    if (!_isWindowsDesktop) return;
+    if (widget.store.minimizeToTray) {
+      await _initTray();
+      return;
+    }
+    if (!_trayInitialized) return;
+    trayManager.removeListener(this);
+    _trayInitialized = false;
+    await trayManager.destroy();
+    await windowManager.setSkipTaskbar(false);
+  }
+
+  Future<void> _minimizeToTray() async {
+    await _initTray();
+    await windowManager.setSkipTaskbar(true);
+    await windowManager.hide();
+  }
+
+  Future<void> _restoreFromTray() async {
+    await windowManager.setSkipTaskbar(false);
+    final isVisible = await windowManager.isVisible();
+    if (!isVisible) {
+      await windowManager.show();
+    }
+    if (await windowManager.isMinimized()) {
+      await windowManager.restore();
+    }
+    await windowManager.focus();
+  }
+
+  Future<void> _exitFromTray() async {
+    if (_trayInitialized) {
+      trayManager.removeListener(this);
+      _trayInitialized = false;
+      await trayManager.destroy();
+    }
+    await windowManager.setSkipTaskbar(false);
+    await windowManager.close();
+  }
+
+  void _handleMinimizePressed() {
+    if (_isWindowsDesktop && widget.store.minimizeToTray) {
+      unawaited(_minimizeToTray());
+      return;
+    }
+    unawaited(windowManager.minimize());
+  }
+
+  @override
+  void onWindowMinimize() {
+    if (_isWindowsDesktop && widget.store.minimizeToTray) {
+      unawaited(_minimizeToTray());
+    }
+  }
+
+  @override
+  void onTrayIconMouseDown() {
+    unawaited(_restoreFromTray());
+  }
+
+  @override
+  void onTrayIconRightMouseDown() {
+    unawaited(trayManager.popUpContextMenu());
+  }
+
+  @override
+  void onTrayMenuItemClick(MenuItem menuItem) {
+    if (menuItem.key == _trayMenuShowKey) {
+      unawaited(_restoreFromTray());
+      return;
+    }
+    if (menuItem.key == _trayMenuExitKey) {
+      unawaited(_exitFromTray());
+    }
   }
 
   String _resizeLayoutKey() {
@@ -784,7 +896,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
               Tooltip(
                 message: 'Minimize',
                 child: IconButton(
-                  onPressed: () => windowManager.minimize(),
+                  onPressed: _handleMinimizePressed,
                   icon: const Icon(Icons.remove),
                 ),
               ),
@@ -2440,6 +2552,19 @@ class _SettingsDialog extends StatelessWidget {
                 onChanged: (v) => store.updateDisplaySettings(
                   showDayRunningBalanceOnHover: v,
                 ),
+              ),
+              SwitchListTile(
+                title: const Text('Minimize To System Tray'),
+                subtitle: Text(
+                  !kIsWeb && defaultTargetPlatform == TargetPlatform.windows
+                      ? 'Minimize button hides the app to tray instead of taskbar.'
+                      : 'Available on Windows desktop.',
+                ),
+                value: store.minimizeToTray,
+                onChanged:
+                    !kIsWeb && defaultTargetPlatform == TargetPlatform.windows
+                    ? (v) => store.updateDisplaySettings(minimizeToTray: v)
+                    : null,
               ),
               const Divider(height: 32),
 

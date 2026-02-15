@@ -25,6 +25,7 @@ BudgetCalendar is a Flutter desktop-first budgeting calendar app, ported from th
 - High contrast mode (applies across app dialogs/popups too).
 - Text magnification (high magnification support).
 - Week start day selection (Sun/Mon/Sat).
+- Optional minimize-to-tray behavior on Windows.
 - Color customization for income, expense, and mixed-income/expense days.
 - Draggable panel layout (month header / totals / calendar) with persistence.
 
