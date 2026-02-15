@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Reduced month-switch jank in calendar day tiles by precomputing day hover running balances once per month grid (instead of recalculating historical running balance per tile) and reusing a single tooltip currency formatter.
 - Improved month page-switch smoothness: removed an extra full rebuild on `onPageChanged` and tuned month navigation animation to a shorter `easeOutCubic` transition.
 - Reverted Windows accent-color panel tinting and set a fixed default dark-mode panel background (`surfaceContainerLow`) to `#1F1F1F`.
 - Updated default dark-mode main window base background/surface color to `#181818`.

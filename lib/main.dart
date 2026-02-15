@@ -1644,6 +1644,24 @@ class _CalendarGrid extends StatelessWidget {
       symbol: store.currencySymbol,
       decimalDigits: 0,
     );
+    final showHoverRunningBalance = store.showDayRunningBalanceOnHover;
+    final hoverRunningBalanceFormat = NumberFormat.currency(
+      locale: 'en_GB',
+      symbol: store.currencySymbol,
+    );
+    final hoverRunningBalanceByDayKey = <String, int>{};
+    if (showHoverRunningBalance) {
+      final monthStart = DateTime(focusedMonth.year, focusedMonth.month, 1);
+      final dayBeforeStart = monthStart.subtract(const Duration(days: 1));
+      var running = store.runningBalancePennies(dayBeforeStart);
+      for (var day = 1; day <= daysInMonth; day++) {
+        final key = DateKey.fromDate(
+          DateTime(focusedMonth.year, focusedMonth.month, day),
+        );
+        running += store.dayBalancePennies(key);
+        hoverRunningBalanceByDayKey[key] = running;
+      }
+    }
 
     final today = DateTime.now();
     final todayKey = DateKey.fromDate(today);
@@ -1929,17 +1947,14 @@ class _CalendarGrid extends StatelessWidget {
                             ),
                           );
 
-                          // Add tooltip with running balance for this day
-                          final runningBalanceForDay = store
-                              .runningBalancePennies(day);
-                          final runningBalanceText = formatCurrency(
-                            store,
-                            runningBalanceForDay.abs(),
-                          );
-
-                          if (!store.showDayRunningBalanceOnHover) {
+                          if (!showHoverRunningBalance) {
                             return cell;
                           }
+                          final runningBalanceForDay =
+                              hoverRunningBalanceByDayKey[dayKey] ??
+                              store.runningBalancePennies(day);
+                          final runningBalanceText = hoverRunningBalanceFormat
+                              .format(runningBalanceForDay.abs() / 100);
                           return Tooltip(
                             message: 'Running balance: $runningBalanceText',
                             child: cell,
