@@ -1363,20 +1363,35 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   }
 
   Future<void> _openUiTweaksDialog(BuildContext context) async {
-    await showDialog<void>(
+    await showGeneralDialog<void>(
       context: context,
-      builder: (dialogContext) => _UiTweaksDialog(
-        initial: _uiTweaks,
-        onApply: (config) => _setUiTweaks(config),
-        onApplyAndReload: (config) async {
-          await _setUiTweaks(config);
-          _reloadLayoutForTweaks();
-        },
-        onResetToDefaults: () async {
-          await _resetUiTweaks();
-          _reloadLayoutForTweaks();
-        },
-      ),
+      barrierLabel: 'UI Tweak Lab',
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.18),
+      pageBuilder: (dialogContext, _, __) {
+        return _DraggableToolWindow(
+          title: 'UI Tweak Lab',
+          child: _UiTweaksDialog(
+            initial: _uiTweaks,
+            onApply: (config) => _setUiTweaks(config),
+            onApplyAndReload: (config) async {
+              await _setUiTweaks(config);
+              _reloadLayoutForTweaks();
+            },
+            onResetToDefaults: () async {
+              await _resetUiTweaks();
+              _reloadLayoutForTweaks();
+            },
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 140),
     );
   }
 
@@ -3327,6 +3342,103 @@ class _UiTweaksDialog extends StatefulWidget {
   State<_UiTweaksDialog> createState() => _UiTweaksDialogState();
 }
 
+class _DraggableToolWindow extends StatefulWidget {
+  const _DraggableToolWindow({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  State<_DraggableToolWindow> createState() => _DraggableToolWindowState();
+}
+
+class _DraggableToolWindowState extends State<_DraggableToolWindow> {
+  Offset _offset = const Offset(90, 70);
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxW = constraints.maxWidth;
+        final maxH = constraints.maxHeight;
+        final minMargin = 10.0;
+        final toolWidth = (maxW - 20).clamp(520.0, 860.0);
+        final toolHeight = (maxH - 20).clamp(420.0, 840.0);
+        final clampedX = _offset.dx.clamp(minMargin, maxW - toolWidth - 8);
+        final clampedY = _offset.dy.clamp(minMargin, maxH - toolHeight - 8);
+        if (clampedX != _offset.dx || clampedY != _offset.dy) {
+          _offset = Offset(clampedX, clampedY);
+        }
+
+        return Stack(
+          children: [
+            Positioned(
+              left: _offset.dx,
+              top: _offset.dy,
+              width: toolWidth,
+              height: toolHeight,
+              child: Material(
+                color: Theme.of(context).colorScheme.surface,
+                elevation: 14,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onPanUpdate: (details) {
+                        setState(() {
+                          _offset += details.delta;
+                        });
+                      },
+                      child: Container(
+                        height: 44,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerLow,
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Theme.of(context).dividerColor,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.tune, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                widget.title,
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Close',
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(Icons.close),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Expanded(child: widget.child),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _UiTweaksDialogState extends State<_UiTweaksDialog> {
   late UiTweakConfig _draft;
 
@@ -3347,6 +3459,7 @@ class _UiTweaksDialogState extends State<_UiTweaksDialog> {
 
   Widget _slider({
     required String label,
+    required String description,
     required double value,
     required double min,
     required double max,
@@ -3356,7 +3469,28 @@ class _UiTweaksDialogState extends State<_UiTweaksDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$label: ${value.toStringAsFixed(2)}'),
+        Row(
+          children: [
+            Expanded(
+              child: Tooltip(
+                message: description,
+                waitDuration: const Duration(milliseconds: 220),
+                child: Text('$label: ${value.toStringAsFixed(2)}'),
+              ),
+            ),
+            Tooltip(
+              message: description,
+              waitDuration: const Duration(milliseconds: 220),
+              child: Icon(
+                Icons.info_outline,
+                size: 16,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.72),
+              ),
+            ),
+          ],
+        ),
         Slider(
           value: value.clamp(min, max),
           min: min,
@@ -3371,228 +3505,271 @@ class _UiTweaksDialogState extends State<_UiTweaksDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('UI Tweak Lab'),
-      content: SizedBox(
-        width: 760,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Adjust sizing ratios and limits used for day/metric cards. '
+                    'Use Apply for live updates or Apply + Reload for a full layout rebuild.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  _slider(
+                    label: 'Compact Threshold Base Width',
+                    description:
+                        'Base width used to decide when totals cards switch to compact mode before text-scale is applied.',
+                    value: _draft.compactMetricBaseWidth,
+                    min: 420,
+                    max: 980,
+                    divisions: 56,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(compactMetricBaseWidth: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Metric Compact Min Card Width',
+                    description:
+                        'Minimum width for totals cards in compact/icon mode.',
+                    value: _draft.metricCompactMinCardWidth,
+                    min: 100,
+                    max: 240,
+                    divisions: 28,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(
+                        metricCompactMinCardWidth: v,
+                      ),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Metric Expanded Min Card Width',
+                    description:
+                        'Minimum width for totals cards in normal mode with labels.',
+                    value: _draft.metricExpandedMinCardWidth,
+                    min: 120,
+                    max: 300,
+                    divisions: 36,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(
+                        metricExpandedMinCardWidth: v,
+                      ),
+                    ),
+                  ),
+                  const Divider(),
+                  _slider(
+                    label: 'Day Number Box Width Base',
+                    description:
+                        'Base horizontal fraction of a day tile reserved for the day number.',
+                    value: _draft.dayNumberBoxWidthBase,
+                    min: 0.45,
+                    max: 0.75,
+                    divisions: 30,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(dayNumberBoxWidthBase: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Day Number Box Width Boost',
+                    description:
+                        'Extra width applied to day-number area as magnification increases.',
+                    value: _draft.dayNumberBoxWidthBoost,
+                    min: 0.00,
+                    max: 0.20,
+                    divisions: 40,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(dayNumberBoxWidthBoost: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Day Number Box Height Base',
+                    description:
+                        'Base vertical fraction of a day tile reserved for the day number.',
+                    value: _draft.dayNumberBoxHeightBase,
+                    min: 0.32,
+                    max: 0.62,
+                    divisions: 30,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(dayNumberBoxHeightBase: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Day Number Box Height Boost',
+                    description:
+                        'Extra day-number box height applied under magnification.',
+                    value: _draft.dayNumberBoxHeightBoost,
+                    min: 0.00,
+                    max: 0.20,
+                    divisions: 40,
+                    onChanged: (v) => setState(
+                      () =>
+                          _draft = _draft.copyWith(dayNumberBoxHeightBoost: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Day Number Base Font',
+                    description:
+                        'Base font size for day numbers before magnification boost.',
+                    value: _draft.dayNumberBaseFont,
+                    min: 12,
+                    max: 30,
+                    divisions: 36,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(dayNumberBaseFont: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Day Number Font Boost',
+                    description:
+                        'Additional day-number font growth factor with magnification.',
+                    value: _draft.dayNumberFontBoost,
+                    min: 0,
+                    max: 8,
+                    divisions: 32,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(dayNumberFontBoost: v),
+                    ),
+                  ),
+                  const Divider(),
+                  _slider(
+                    label: 'Badge Small Font',
+                    description:
+                        'Entry-count badge font used when day cells are smaller.',
+                    value: _draft.badgeBaseSmallFont,
+                    min: 7,
+                    max: 14,
+                    divisions: 28,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(badgeBaseSmallFont: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Badge Large Font',
+                    description:
+                        'Entry-count badge font used when day cells are larger.',
+                    value: _draft.badgeBaseLargeFont,
+                    min: 8,
+                    max: 16,
+                    divisions: 32,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(badgeBaseLargeFont: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Badge Font Boost',
+                    description:
+                        'Magnification growth multiplier for entry-count badges.',
+                    value: _draft.badgeFontBoost,
+                    min: 0,
+                    max: 1.2,
+                    divisions: 48,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(badgeFontBoost: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Amount Small Font',
+                    description: 'Day balance font for smaller day cells.',
+                    value: _draft.amountBaseSmallFont,
+                    min: 9,
+                    max: 18,
+                    divisions: 36,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(amountBaseSmallFont: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Amount Large Font',
+                    description: 'Day balance font for larger day cells.',
+                    value: _draft.amountBaseLargeFont,
+                    min: 10,
+                    max: 20,
+                    divisions: 40,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(amountBaseLargeFont: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Amount Font Boost',
+                    description:
+                        'Magnification growth multiplier for day balance text.',
+                    value: _draft.amountFontBoost,
+                    min: 0,
+                    max: 1.2,
+                    divisions: 48,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(amountFontBoost: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Show Entry Badge Min Cell',
+                    description:
+                        'Minimum day-cell size required before showing the entry-count badge.',
+                    value: _draft.showEntryBadgeMinCell,
+                    min: 28,
+                    max: 72,
+                    divisions: 44,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(showEntryBadgeMinCell: v),
+                    ),
+                  ),
+                  _slider(
+                    label: 'Show Day Balance Min Cell',
+                    description:
+                        'Minimum day-cell size required before showing day balance text.',
+                    value: _draft.showDayBalanceMinCell,
+                    min: 30,
+                    max: 88,
+                    divisions: 58,
+                    onChanged: (v) => setState(
+                      () => _draft = _draft.copyWith(showDayBalanceMinCell: v),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.end,
             children: [
-              Text(
-                'Adjust sizing ratios and limits used for day/metric cards. '
-                'Use Apply for live updates or Apply + Reload for a full layout rebuild.',
-                style: Theme.of(context).textTheme.bodySmall,
+              TextButton.icon(
+                onPressed: _copyValues,
+                icon: const Icon(Icons.content_copy),
+                label: const Text('Copy Values'),
               ),
-              const SizedBox(height: 12),
-              _slider(
-                label: 'Compact Threshold Base Width',
-                value: _draft.compactMetricBaseWidth,
-                min: 420,
-                max: 980,
-                divisions: 56,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(compactMetricBaseWidth: v),
-                ),
+              TextButton(
+                onPressed: () async {
+                  await widget.onResetToDefaults();
+                  if (!mounted) return;
+                  setState(() => _draft = UiTweakConfig.defaults);
+                },
+                child: const Text('Reset Defaults'),
               ),
-              _slider(
-                label: 'Metric Compact Min Card Width',
-                value: _draft.metricCompactMinCardWidth,
-                min: 100,
-                max: 240,
-                divisions: 28,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(metricCompactMinCardWidth: v),
-                ),
+              FilledButton.tonal(
+                onPressed: () => widget.onApply(_draft),
+                child: const Text('Apply'),
               ),
-              _slider(
-                label: 'Metric Expanded Min Card Width',
-                value: _draft.metricExpandedMinCardWidth,
-                min: 120,
-                max: 300,
-                divisions: 36,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(metricExpandedMinCardWidth: v),
-                ),
-              ),
-              const Divider(),
-              _slider(
-                label: 'Day Number Box Width Base',
-                value: _draft.dayNumberBoxWidthBase,
-                min: 0.45,
-                max: 0.75,
-                divisions: 30,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(dayNumberBoxWidthBase: v),
-                ),
-              ),
-              _slider(
-                label: 'Day Number Box Width Boost',
-                value: _draft.dayNumberBoxWidthBoost,
-                min: 0.00,
-                max: 0.20,
-                divisions: 40,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(dayNumberBoxWidthBoost: v),
-                ),
-              ),
-              _slider(
-                label: 'Day Number Box Height Base',
-                value: _draft.dayNumberBoxHeightBase,
-                min: 0.32,
-                max: 0.62,
-                divisions: 30,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(dayNumberBoxHeightBase: v),
-                ),
-              ),
-              _slider(
-                label: 'Day Number Box Height Boost',
-                value: _draft.dayNumberBoxHeightBoost,
-                min: 0.00,
-                max: 0.20,
-                divisions: 40,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(dayNumberBoxHeightBoost: v),
-                ),
-              ),
-              _slider(
-                label: 'Day Number Base Font',
-                value: _draft.dayNumberBaseFont,
-                min: 12,
-                max: 30,
-                divisions: 36,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(dayNumberBaseFont: v),
-                ),
-              ),
-              _slider(
-                label: 'Day Number Font Boost',
-                value: _draft.dayNumberFontBoost,
-                min: 0,
-                max: 8,
-                divisions: 32,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(dayNumberFontBoost: v),
-                ),
-              ),
-              const Divider(),
-              _slider(
-                label: 'Badge Small Font',
-                value: _draft.badgeBaseSmallFont,
-                min: 7,
-                max: 14,
-                divisions: 28,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(badgeBaseSmallFont: v),
-                ),
-              ),
-              _slider(
-                label: 'Badge Large Font',
-                value: _draft.badgeBaseLargeFont,
-                min: 8,
-                max: 16,
-                divisions: 32,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(badgeBaseLargeFont: v),
-                ),
-              ),
-              _slider(
-                label: 'Badge Font Boost',
-                value: _draft.badgeFontBoost,
-                min: 0,
-                max: 1.2,
-                divisions: 48,
-                onChanged: (v) =>
-                    setState(() => _draft = _draft.copyWith(badgeFontBoost: v)),
-              ),
-              _slider(
-                label: 'Amount Small Font',
-                value: _draft.amountBaseSmallFont,
-                min: 9,
-                max: 18,
-                divisions: 36,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(amountBaseSmallFont: v),
-                ),
-              ),
-              _slider(
-                label: 'Amount Large Font',
-                value: _draft.amountBaseLargeFont,
-                min: 10,
-                max: 20,
-                divisions: 40,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(amountBaseLargeFont: v),
-                ),
-              ),
-              _slider(
-                label: 'Amount Font Boost',
-                value: _draft.amountFontBoost,
-                min: 0,
-                max: 1.2,
-                divisions: 48,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(amountFontBoost: v),
-                ),
-              ),
-              _slider(
-                label: 'Show Entry Badge Min Cell',
-                value: _draft.showEntryBadgeMinCell,
-                min: 28,
-                max: 72,
-                divisions: 44,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(showEntryBadgeMinCell: v),
-                ),
-              ),
-              _slider(
-                label: 'Show Day Balance Min Cell',
-                value: _draft.showDayBalanceMinCell,
-                min: 30,
-                max: 88,
-                divisions: 58,
-                onChanged: (v) => setState(
-                  () => _draft = _draft.copyWith(showDayBalanceMinCell: v),
-                ),
+              FilledButton(
+                onPressed: () async {
+                  await widget.onApplyAndReload(_draft);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Applied and reloaded.')),
+                  );
+                },
+                child: const Text('Apply + Reload'),
               ),
             ],
           ),
-        ),
+        ],
       ),
-      actions: [
-        TextButton.icon(
-          onPressed: _copyValues,
-          icon: const Icon(Icons.content_copy),
-          label: const Text('Copy Values'),
-        ),
-        TextButton(
-          onPressed: () async {
-            await widget.onResetToDefaults();
-            if (!mounted) return;
-            setState(() => _draft = UiTweakConfig.defaults);
-          },
-          child: const Text('Reset Defaults'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
-        ),
-        FilledButton.tonal(
-          onPressed: () => widget.onApply(_draft),
-          child: const Text('Apply'),
-        ),
-        FilledButton(
-          onPressed: () async {
-            await widget.onApplyAndReload(_draft);
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Applied and reloaded.')),
-            );
-          },
-          child: const Text('Apply + Reload'),
-        ),
-      ],
     );
   }
 }
