@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Updated README screenshots and busted image cache by renaming assets to `docs/main-v2.png` and `docs/entry-v2.png`.
 - Rewrote `README.md` for release consumption: added installer download section for tag `0.1` and embedded screenshots from `docs/main.png` and `docs/entry.png`.
 - Bumped app version to `0.1.0` (`pubspec.yaml`) and aligned Inno Setup default `AppVersion` fallback to `0.1.0`.
 - Fixed high-contrast settings presentation: strengthened scaffold/card/divider contrast and added explicit high-contrast switch/slider/list-tile theming so controls (especially magnification slider and toggle tracks) remain clearly visible.

@@ -8,8 +8,8 @@ BudgetCalendar is a Flutter desktop-first budgeting calendar app, ported from th
 - Installer file: `BudgetCalendar-Setup-v0.1.0.exe`
 
 ## Screenshots
-![Main Calendar View](docs/main.png)
-![Day Entry View](docs/entry.png)
+![Main Calendar View](docs/main-v2.png)
+![Day Entry View](docs/entry-v2.png)
 
 ## Features
 - Calendar-based budgeting with month navigation.
