@@ -483,12 +483,23 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     const panelGap = 10.0;
     const panelPadding = 18.0; // from _buildMonthView outer padding
     final monthHeaderHeight = 52.0 * textScale;
+    const daySpacing = 8.0;
+    final panelInnerWidth = (contentWidth - 24).clamp(0.0, double.infinity);
+    final estimatedGridHostWidth = (panelInnerWidth - 24).clamp(
+      0.0,
+      double.infinity,
+    );
+    final widthLimitedDayCell =
+        ((estimatedGridHostWidth - (daySpacing * 6)) / 7).clamp(
+          24.0 * textScale,
+          76.0 * textScale,
+        );
     final calendarMinComfortHeight =
         24 +
         (28.0 * textScale) +
         10 +
-        (rowCount * (58.0 * textScale)) +
-        (8 * (rowCount - 1));
+        (rowCount * widthLimitedDayCell) +
+        (daySpacing * (rowCount - 1));
 
     final panelsHeightBudget = (contentHeight - panelPadding).clamp(
       0.0,
@@ -502,7 +513,13 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     final spareCalendarHeight =
         compactCalendarHeight - calendarMinComfortHeight;
 
-    return spareCalendarHeight >= (extraNeededForExpanded + 8);
+    // On narrow windows we keep full cards longer to avoid abrupt mode flips
+    // that can leave noticeable dead vertical space.
+    final narrowWidthFactor =
+        ((compactThreshold - contentWidth) / compactThreshold).clamp(0.0, 1.0);
+    final verticalGrace = (10.0 + (36.0 * narrowWidthFactor)) * textScale;
+
+    return spareCalendarHeight >= (extraNeededForExpanded - verticalGrace);
   }
 
   DateTime _monthForPageIndex(int pageIndex) {

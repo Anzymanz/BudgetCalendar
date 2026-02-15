@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Narrow-window compact-mode tuning: totals cards now stay in normal mode longer while shrinking vertically, using a width-aware calendar height estimate plus a narrow-width grace threshold to reduce dead-space flips.
 - Performance pass for smoother UI: debounced window-size persistence during manual resize, disabled animated auto-resize-to-content to avoid resize jitter, and hoisted day-cell compact-currency formatter creation out of per-cell build paths.
 - Month navigation no longer triggers Windows auto-resize, and totals compact/expanded card mode decisions are now month-independent (no small/normal card-mode flipping when moving between months).
 - Refreshed `README.md` to document current capabilities (recurrence, notes, accessibility, panel persistence, data safety), plus updated run/test/build/installer workflows.
