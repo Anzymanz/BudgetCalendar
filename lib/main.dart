@@ -424,16 +424,8 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     return count;
   }
 
-  int _monthRowCount(BudgetStore store, DateTime month) {
-    final first = DateTime(month.year, month.month, 1);
-    final firstWeekday = store.getFirstWeekdayOffset(first);
-    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
-    return ((firstWeekday + daysInMonth + 6) ~/ 7);
-  }
-
   bool _shouldPreferExpandedMetricCards({
     required BudgetStore store,
-    required DateTime month,
     required double contentWidth,
     required double contentHeight,
   }) {
@@ -478,7 +470,9 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     final extraNeededForExpanded = expandedTotalsHeight - compactTotalsHeight;
     if (extraNeededForExpanded <= 0) return true;
 
-    final rowCount = _monthRowCount(store, month);
+    // Keep compact-mode decisions month-independent to avoid mode flips when
+    // switching between 5-row and 6-row calendar months.
+    const rowCount = 6;
     const panelGap = 10.0;
     const panelPadding = 18.0; // from _buildMonthView outer padding
     final monthHeaderHeight = 52.0 * textScale;
@@ -558,9 +552,6 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
               setState(() {
                 _focusedMonth = _monthForPageIndex(index);
               });
-              if (_isWindowsDesktop) {
-                _scheduleWindowResizeToContent();
-              }
             },
             itemBuilder: (context, pageIndex) {
               final month = _monthForPageIndex(pageIndex);
@@ -678,7 +669,6 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
       builder: (context, constraints) {
         final preferExpandedMetrics = _shouldPreferExpandedMetricCards(
           store: store,
-          month: month,
           contentWidth: constraints.maxWidth,
           contentHeight: constraints.maxHeight,
         );
