@@ -2,25 +2,22 @@
 
 BudgetCalendar is a Flutter desktop-first budgeting calendar app, ported from the original Python/Tkinter version.
 
-## What It Does
+## Download Installer
+- Get the latest Windows installer from GitHub Releases.
+- Release tag: `0.1`
+- Installer file: `BudgetCalendar-Setup-v0.1.0.exe`
+
+## Screenshots
+![Main Calendar View](docs/main.png)
+![Day Entry View](docs/entry.png)
+
+## Features
 - Calendar-based budgeting with month navigation.
-- Per-day income and expense entries with add/edit/delete.
+- Per-day income and expense entries with add, edit, and delete.
 - Optional notes on each entry.
-- Recurring entries:
-  - Every week
-  - Every 2 weeks
-  - Every 4 weeks
-  - Every month
-- Monthly totals:
-  - Income
-  - Expenses
-  - Month balance
-  - Running balance
-  - Budget remaining (when monthly target is set)
-- Day-level information:
-  - Entry count badge
-  - Day net amount
-  - Optional running-balance tooltip on hover
+- Recurring entries: every week, every 2 weeks, every 4 weeks, every month.
+- Monthly totals: income, expenses, month balance, running balance, budget remaining.
+- Day-level indicators: entry count, day net amount, optional running-balance hover tooltip.
 
 ## Settings and Accessibility
 - Currency symbol, starting balance, monthly budget target.
@@ -86,6 +83,3 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1 -IsccPath
 
 Installer output:
 - `dist\installer\BudgetCalendar-Setup-v<version>.exe`
-
-## Repo Notes
-- `reference/` is ignored via `.gitignore` and contains legacy porting materials.

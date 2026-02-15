@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Rewrote `README.md` for release consumption: added installer download section for tag `0.1` and embedded screenshots from `docs/main.png` and `docs/entry.png`.
 - Bumped app version to `0.1.0` (`pubspec.yaml`) and aligned Inno Setup default `AppVersion` fallback to `0.1.0`.
 - Fixed high-contrast settings presentation: strengthened scaffold/card/divider contrast and added explicit high-contrast switch/slider/list-tile theming so controls (especially magnification slider and toggle tracks) remain clearly visible.
 - Narrow-window compact-mode tuning: totals cards now stay in normal mode longer while shrinking vertically, using a width-aware calendar height estimate plus a narrow-width grace threshold to reduce dead-space flips.
