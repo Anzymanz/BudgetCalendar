@@ -1,7 +1,6 @@
 #include "flutter_window.h"
 
 #include <optional>
-#include <dwmapi.h>
 
 #include "flutter/generated_plugin_registrant.h"
 
@@ -27,32 +26,6 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
-
-  system_channel_ =
-      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-          flutter_controller_->engine()->messenger(), "budget_calendar/system",
-          &flutter::StandardMethodCodec::GetInstance());
-
-  system_channel_->SetMethodCallHandler(
-      [](const flutter::MethodCall<flutter::EncodableValue>& call,
-         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
-             result) {
-        if (call.method_name() == "getWindowsAccentColor") {
-          DWORD colorization_color = 0;
-          BOOL opaque_blend = FALSE;
-          const HRESULT hr =
-              DwmGetColorizationColor(&colorization_color, &opaque_blend);
-          if (SUCCEEDED(hr)) {
-            // Convert to a 0xAARRGGBB integer value for Flutter.
-            const int64_t argb = static_cast<int64_t>(colorization_color);
-            result->Success(flutter::EncodableValue(argb));
-          } else {
-            result->Success();
-          }
-          return;
-        }
-        result->NotImplemented();
-      });
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();

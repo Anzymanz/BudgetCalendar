@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Reverted Windows accent-color panel tinting and set a fixed default dark-mode panel background (`surfaceContainerLow`) to `#1F1F1F`.
 - Updated default dark-mode main window base background/surface color to `#181818`.
 - Added Windows accent-color integration for panel backgrounds: app now queries system personalization accent color via native method channel and uses it to tint panel surfaces (with safe fallback when unavailable).
 - Hardened tray-minimize behavior on Windows: when minimizing to tray, the app now normalizes minimized state before hiding so the taskbar button is consistently removed.

@@ -22,7 +22,6 @@ String formatCurrency(BudgetStore store, int pennies) {
 const _windowWidthPrefKey = 'window_width';
 const _windowHeightPrefKey = 'window_height';
 const _compactMetricBaseWidth = 620.0;
-const _systemChannel = MethodChannel('budget_calendar/system');
 
 double _compactMetricWidthThreshold(double textScaleFactor) {
   final scale = textScaleFactor.clamp(1.0, 2.0);
@@ -31,7 +30,6 @@ double _compactMetricWidthThreshold(double textScaleFactor) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Color? windowsAccentColor;
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
     final prefs = await SharedPreferences.getInstance();
     final savedWidth = prefs.getDouble(_windowWidthPrefKey);
@@ -47,33 +45,15 @@ Future<void> main() async {
       await windowManager.show();
       await windowManager.focus();
     });
-    windowsAccentColor = await _readWindowsAccentColor();
   }
   final store = await BudgetStore.load();
-  runApp(
-    BudgetCalendarApp(store: store, windowsAccentColor: windowsAccentColor),
-  );
-}
-
-Future<Color?> _readWindowsAccentColor() async {
-  try {
-    final v = await _systemChannel.invokeMethod<int>('getWindowsAccentColor');
-    if (v == null) return null;
-    return Color(v);
-  } catch (_) {
-    return null;
-  }
+  runApp(BudgetCalendarApp(store: store));
 }
 
 class BudgetCalendarApp extends StatelessWidget {
-  const BudgetCalendarApp({
-    super.key,
-    required this.store,
-    this.windowsAccentColor,
-  });
+  const BudgetCalendarApp({super.key, required this.store});
 
   final BudgetStore store;
-  final Color? windowsAccentColor;
 
   @override
   Widget build(BuildContext context) {
@@ -94,31 +74,10 @@ class BudgetCalendarApp extends StatelessWidget {
             seedColor: const Color(0xFF8B8D90),
             brightness: Brightness.dark,
             surface: const Color(0xFF181818),
-          ),
+          ).copyWith(surfaceContainerLow: const Color(0xFF1F1F1F)),
           scaffoldBackgroundColor: const Color(0xFF181818),
           useMaterial3: true,
         );
-
-        if (windowsAccentColor != null && !store.highContrastMode) {
-          final lightPanel = Color.alphaBlend(
-            windowsAccentColor!.withValues(alpha: 0.16),
-            light.colorScheme.surface,
-          );
-          final darkPanel = Color.alphaBlend(
-            windowsAccentColor!.withValues(alpha: 0.28),
-            dark.colorScheme.surface,
-          );
-          light = light.copyWith(
-            colorScheme: light.colorScheme.copyWith(
-              surfaceContainerLow: lightPanel,
-            ),
-          );
-          dark = dark.copyWith(
-            colorScheme: dark.colorScheme.copyWith(
-              surfaceContainerLow: darkPanel,
-            ),
-          );
-        }
 
         if (store.highContrastMode) {
           light = light.copyWith(
