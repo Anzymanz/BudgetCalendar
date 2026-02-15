@@ -379,6 +379,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   bool _windowResizeScheduled = false;
   bool _windowSizingInitialized = false;
   Timer? _windowPersistDebounce;
+  String _lastResizeLayoutKey = '';
 
   @override
   void initState() {
@@ -388,6 +389,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     _referenceMonth = _focusedMonth; // Store the initial month as reference
     _pageController = PageController(initialPage: _initialPageIndex);
     _loadPanelOrderFromStore();
+    _lastResizeLayoutKey = _resizeLayoutKey();
     widget.store.addListener(_onStoreChanged);
     if (_isWindowsDesktop) {
       _initWindowSizing();
@@ -406,9 +408,23 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   }
 
   void _onStoreChanged() {
-    if (_isWindowsDesktop) {
-      _scheduleWindowResizeToContent();
+    if (!_isWindowsDesktop) return;
+    final key = _resizeLayoutKey();
+    if (key == _lastResizeLayoutKey) {
+      return;
     }
+    _lastResizeLayoutKey = key;
+    _scheduleWindowResizeToContent();
+  }
+
+  String _resizeLayoutKey() {
+    final s = widget.store;
+    return [
+      s.textScaleFactor.toStringAsFixed(2),
+      s.showMonthBalance.toString(),
+      s.showRunningBalance.toString(),
+      (s.monthlyBudgetPennies > 0).toString(),
+    ].join('|');
   }
 
   Future<void> _initWindowSizing() async {

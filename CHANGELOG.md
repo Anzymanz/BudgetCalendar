@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Fixed unexpected window-height jumps on dark/light toggle and entry submission by limiting Windows auto-resize triggers to layout-affecting settings only (text scale and totals-card visibility changes).
 - Updated README screenshots and busted image cache by renaming assets to `docs/main-v2.png` and `docs/entry-v2.png`.
 - Rewrote `README.md` for release consumption: added installer download section for tag `0.1` and embedded screenshots from `docs/main.png` and `docs/entry.png`.
 - Bumped app version to `0.1.0` (`pubspec.yaml`) and aligned Inno Setup default `AppVersion` fallback to `0.1.0`.
