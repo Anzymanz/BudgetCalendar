@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -270,6 +272,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
   bool _windowResizeScheduled = false;
   bool _windowSizingInitialized = false;
+  Timer? _windowPersistDebounce;
 
   @override
   void initState() {
@@ -291,6 +294,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     if (_isWindowsDesktop) {
       windowManager.removeListener(this);
     }
+    _windowPersistDebounce?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -315,7 +319,10 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
 
   @override
   void onWindowResize() {
-    _persistCurrentWindowSize();
+    _windowPersistDebounce?.cancel();
+    _windowPersistDebounce = Timer(const Duration(milliseconds: 220), () {
+      _persistCurrentWindowSize();
+    });
   }
 
   Future<void> _persistCurrentWindowSize() async {
@@ -345,7 +352,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     if ((targetHeight - currentSize.height).abs() < 1) return;
     await windowManager.setSize(
       Size(currentSize.width, targetHeight),
-      animate: true,
+      animate: false,
     );
     await _persistCurrentWindowSize();
   }
@@ -1375,6 +1382,11 @@ class _CalendarGrid extends StatelessWidget {
 
     final cellCount = ((firstWeekday + daysInMonth + 6) ~/ 7) * 7;
     final rowCount = cellCount ~/ 7;
+    final compactDayAmountFormat = NumberFormat.compactCurrency(
+      locale: 'en_GB',
+      symbol: store.currencySymbol,
+      decimalDigits: 0,
+    );
 
     final today = DateTime.now();
     final todayKey = DateKey.fromDate(today);
@@ -1521,12 +1533,6 @@ class _CalendarGrid extends StatelessWidget {
                               entryCount > 0 && cellSize >= (46.0 * uiScale);
                           final showDayBalance =
                               dayBalance != 0 && cellSize >= (58.0 * uiScale);
-                          final f = NumberFormat.compactCurrency(
-                            locale: 'en_GB',
-                            symbol: store.currencySymbol,
-                            decimalDigits: 0,
-                          );
-
                           Widget cell = InkWell(
                             onTap: () => onOpenDay(day),
                             borderRadius: BorderRadius.circular(12),
@@ -1622,7 +1628,9 @@ class _CalendarGrid extends StatelessWidget {
                                       left: 0,
                                       right: 0,
                                       child: Text(
-                                        f.format(dayBalance.abs() / 100),
+                                        compactDayAmountFormat.format(
+                                          dayBalance.abs() / 100,
+                                        ),
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontSize: cellSize >= 65 ? 13 : 12,
