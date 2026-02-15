@@ -1,45 +1,86 @@
 # BudgetCalendar
 
-Flutter port of the legacy `Budget Calendar` Python/Tkinter app.
+BudgetCalendar is a Flutter desktop-first budgeting calendar app, ported from the original Python/Tkinter version.
 
-## Features
-- Month view calendar
-- Per-day income and expense entries (add/edit/delete)
-- Monthly totals (income, expenses, balance)
-- Running balance (hover a day on desktop/web)
-- Dark mode (persisted)
+## What It Does
+- Calendar-based budgeting with month navigation.
+- Per-day income and expense entries with add/edit/delete.
+- Optional notes on each entry.
+- Recurring entries:
+  - Every week
+  - Every 2 weeks
+  - Every 4 weeks
+  - Every month
+- Monthly totals:
+  - Income
+  - Expenses
+  - Month balance
+  - Running balance
+  - Budget remaining (when monthly target is set)
+- Day-level information:
+  - Entry count badge
+  - Day net amount
+  - Optional running-balance tooltip on hover
 
-## Data
-Data is stored as JSON (`budget_data.json`) in the platform app-support location (or browser storage on web).
+## Settings and Accessibility
+- Currency symbol, starting balance, monthly budget target.
+- Dark mode.
+- High contrast mode (applies across app dialogs/popups too).
+- Text magnification (high magnification support).
+- Week start day selection (Sun/Mon/Sat).
+- Color customization for income, expense, and mixed-income/expense days.
+- Draggable panel layout (month header / totals / calendar) with persistence.
 
-## Development
+## Data Safety and Portability
+- Local JSON persistence with automatic save.
+- Manual backup snapshots and restore latest backup.
+- JSON export (copy to clipboard) and JSON import (validation + safety checks).
+- Import path includes failsafes and backup-first behavior.
+
+Windows data location:
+- `%APPDATA%\Budget_Calendar\budget_data.json`
+
+## Run From Source
 Requirements:
 - Flutter SDK (tested with Flutter 3.35.x / Dart 3.9.x)
 
-Run (Windows example):
 ```powershell
 flutter pub get
 flutter run -d windows
 ```
 
-## Windows Installer (Inno Setup)
+## Test and Lint
+```powershell
+flutter analyze
+flutter test
+```
+
+## Build Windows Release
+```powershell
+flutter build windows --release
+```
+
+Portable output folder:
+- `build\windows\x64\runner\Release\`
+
+## Build Windows Installer (Inno Setup)
 Requirements:
 - Inno Setup 6 (`ISCC.exe`)
 
-Build release + installer in one command:
+One-command build (Flutter release + installer):
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1
 ```
 
 Optional flags:
 ```powershell
-# Override semantic version in installer filename/metadata
+# Override installer version
 powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1 -AppVersion 1.2.3
 
-# Build debug binaries before packaging (normally use release)
+# Build debug binaries before packaging (normally release)
 powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1 -Configuration debug
 
-# Provide explicit ISCC path if Inno Setup is not on PATH
+# Provide explicit ISCC path if not on PATH
 powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1 -IsccPath "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 ```
 
@@ -47,17 +88,4 @@ Installer output:
 - `dist\installer\BudgetCalendar-Setup-v<version>.exe`
 
 ## Repo Notes
-- `reference/` is ignored via `.gitignore` (it contains the legacy Python source and assets used for porting).
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- `reference/` is ignored via `.gitignore` and contains legacy porting materials.

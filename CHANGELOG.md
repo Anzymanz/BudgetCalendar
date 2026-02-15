@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Refreshed `README.md` to document current capabilities (recurrence, notes, accessibility, panel persistence, data safety), plus updated run/test/build/installer workflows.
 - Standardized naming from `BudgetCalendar 2.0` to `BudgetCalendar` across installer metadata/output naming and README documentation.
 - Expanded `.gitignore` for packaging/distribution artifacts (`installer/Output`, `.msi`, `.appx/.appxbundle`, `.appinstaller`, `.zip`).
 - Fixed installer tooling detection for Inno Setup: corrected Windows env-var path handling for `ProgramFiles(x86)`, added registry-based ISCC discovery, and added `-IsccPath` override in `scripts/build_installer.ps1`.
