@@ -93,9 +93,9 @@ class BudgetCalendarApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF8B8D90),
             brightness: Brightness.dark,
-            surface: const Color(0xFF1A1A1A),
+            surface: const Color(0xFF181818),
           ),
-          scaffoldBackgroundColor: const Color(0xFF1A1A1A),
+          scaffoldBackgroundColor: const Color(0xFF181818),
           useMaterial3: true,
         );
 
