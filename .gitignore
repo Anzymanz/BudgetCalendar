@@ -37,6 +37,14 @@ reference/
 /dist/
 /coverage/
 
+# Installer/distribution artifacts
+/installer/Output/
+*.msi
+*.appx
+*.appxbundle
+*.appinstaller
+*.zip
+
 # Symbolication related
 app.*.symbols
 

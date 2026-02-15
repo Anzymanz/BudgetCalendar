@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Standardized naming from `BudgetCalendar 2.0` to `BudgetCalendar` across installer metadata/output naming and README documentation.
+- Expanded `.gitignore` for packaging/distribution artifacts (`installer/Output`, `.msi`, `.appx/.appxbundle`, `.appinstaller`, `.zip`).
 - Fixed installer tooling detection for Inno Setup: corrected Windows env-var path handling for `ProgramFiles(x86)`, added registry-based ISCC discovery, and added `-IsccPath` override in `scripts/build_installer.ps1`.
 - Added Windows installer packaging support via Inno Setup: new `installer/BudgetCalendar.iss`, plus one-command `scripts/build_installer.ps1` that builds Flutter Windows release and outputs `Setup.exe` into `dist\installer`.
 - Totals/data cards now avoid compact mode when there is enough spare calendar-panel height: cards can use additional rows/vertical space before collapsing into label-hidden compact mode.

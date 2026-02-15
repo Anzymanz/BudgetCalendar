@@ -1,4 +1,4 @@
-# BudgetCalendar 2.0
+# BudgetCalendar
 
 Flutter port of the legacy `Budget Calendar` Python/Tkinter app.
 
@@ -44,7 +44,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1 -IsccPath
 ```
 
 Installer output:
-- `dist\installer\BudgetCalendar-2.0-Setup-v<version>.exe`
+- `dist\installer\BudgetCalendar-Setup-v<version>.exe`
 
 ## Repo Notes
 - `reference/` is ignored via `.gitignore` (it contains the legacy Python source and assets used for porting).

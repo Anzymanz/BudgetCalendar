@@ -1,4 +1,4 @@
-#define AppName "BudgetCalendar 2.0"
+#define AppName "BudgetCalendar"
 #ifndef AppVersion
   #define AppVersion "1.0.0"
 #endif
@@ -19,7 +19,7 @@ DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir={#OutputDir}
-OutputBaseFilename=BudgetCalendar-2.0-Setup-v{#AppVersion}
+OutputBaseFilename=BudgetCalendar-Setup-v{#AppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
