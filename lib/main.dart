@@ -104,6 +104,59 @@ class BudgetCalendarApp extends StatelessWidget {
         }
 
         light = light.copyWith(
+          scaffoldBackgroundColor: light.colorScheme.surface,
+          cardTheme: CardThemeData(
+            color: light.colorScheme.surface,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: store.highContrastMode
+                    ? light.colorScheme.outline
+                    : Colors.transparent,
+                width: store.highContrastMode ? 2 : 0,
+              ),
+            ),
+          ),
+          dividerTheme: DividerThemeData(
+            color: store.highContrastMode
+                ? light.colorScheme.outline
+                : light.colorScheme.outlineVariant,
+            thickness: store.highContrastMode ? 2 : 1,
+          ),
+          switchTheme: SwitchThemeData(
+            thumbColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return light.colorScheme.surface;
+              }
+              return light.colorScheme.onSurface;
+            }),
+            trackColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return light.colorScheme.onSurface;
+              }
+              return light.colorScheme.surface;
+            }),
+            trackOutlineColor: WidgetStateProperty.all(
+              light.colorScheme.outline,
+            ),
+            trackOutlineWidth: WidgetStateProperty.all(
+              store.highContrastMode ? 2 : 1,
+            ),
+          ),
+          sliderTheme: light.sliderTheme.copyWith(
+            activeTrackColor: light.colorScheme.onSurface,
+            inactiveTrackColor: store.highContrastMode
+                ? light.colorScheme.outline
+                : light.colorScheme.outlineVariant,
+            thumbColor: light.colorScheme.onSurface,
+            overlayColor: light.colorScheme.onSurface.withValues(alpha: 0.15),
+            trackHeight: store.highContrastMode ? 5 : 4,
+          ),
+          listTileTheme: ListTileThemeData(
+            iconColor: light.colorScheme.onSurface,
+            textColor: light.colorScheme.onSurface,
+          ),
           appBarTheme: AppBarTheme(
             backgroundColor: light.colorScheme.surface,
             foregroundColor: light.colorScheme.onSurface,
@@ -153,6 +206,59 @@ class BudgetCalendarApp extends StatelessWidget {
           ),
         );
         dark = dark.copyWith(
+          scaffoldBackgroundColor: dark.colorScheme.surface,
+          cardTheme: CardThemeData(
+            color: dark.colorScheme.surface,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: store.highContrastMode
+                    ? dark.colorScheme.outline
+                    : Colors.transparent,
+                width: store.highContrastMode ? 2 : 0,
+              ),
+            ),
+          ),
+          dividerTheme: DividerThemeData(
+            color: store.highContrastMode
+                ? dark.colorScheme.outline
+                : dark.colorScheme.outlineVariant,
+            thickness: store.highContrastMode ? 2 : 1,
+          ),
+          switchTheme: SwitchThemeData(
+            thumbColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return dark.colorScheme.surface;
+              }
+              return dark.colorScheme.onSurface;
+            }),
+            trackColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return dark.colorScheme.onSurface;
+              }
+              return dark.colorScheme.surface;
+            }),
+            trackOutlineColor: WidgetStateProperty.all(
+              dark.colorScheme.outline,
+            ),
+            trackOutlineWidth: WidgetStateProperty.all(
+              store.highContrastMode ? 2 : 1,
+            ),
+          ),
+          sliderTheme: dark.sliderTheme.copyWith(
+            activeTrackColor: dark.colorScheme.onSurface,
+            inactiveTrackColor: store.highContrastMode
+                ? dark.colorScheme.outline
+                : dark.colorScheme.outlineVariant,
+            thumbColor: dark.colorScheme.onSurface,
+            overlayColor: dark.colorScheme.onSurface.withValues(alpha: 0.15),
+            trackHeight: store.highContrastMode ? 5 : 4,
+          ),
+          listTileTheme: ListTileThemeData(
+            iconColor: dark.colorScheme.onSurface,
+            textColor: dark.colorScheme.onSurface,
+          ),
           appBarTheme: AppBarTheme(
             backgroundColor: dark.colorScheme.surface,
             foregroundColor: dark.colorScheme.onSurface,
