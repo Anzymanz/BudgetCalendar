@@ -234,12 +234,12 @@ class BudgetStore extends ChangeNotifier {
     final bothColorLight = _getColor(
       settings,
       'both_color_light',
-      const Color(0xFF5C6F7D),
+      const Color(0xFFFFB74D),
     );
     final bothColorDark = _getColor(
       settings,
       'both_color_dark',
-      const Color(0xFF8F9CA8),
+      const Color(0xFFFFB74D),
     );
 
     final showRunningBalance = _getBool(settings, 'show_running_balance', true);
@@ -316,8 +316,8 @@ class BudgetStore extends ChangeNotifier {
       incomeColorDark: const Color(0xFF66BB6A),
       expenseColorLight: const Color(0xFFC62828),
       expenseColorDark: const Color(0xFFEF5350),
-      bothColorLight: const Color(0xFF5C6F7D),
-      bothColorDark: const Color(0xFF8F9CA8),
+      bothColorLight: const Color(0xFFFFB74D),
+      bothColorDark: const Color(0xFFFFB74D),
       showRunningBalance: true,
       showMonthBalance: true,
       showDayRunningBalanceOnHover: true,
@@ -833,8 +833,8 @@ class BudgetStore extends ChangeNotifier {
     incomeColorDark = const Color(0xFF66BB6A);
     expenseColorLight = const Color(0xFFC62828);
     expenseColorDark = const Color(0xFFEF5350);
-    bothColorLight = const Color(0xFF5C6F7D);
-    bothColorDark = const Color(0xFF8F9CA8);
+    bothColorLight = const Color(0xFFFFB74D);
+    bothColorDark = const Color(0xFFFFB74D);
     await _save();
     notifyListeners();
   }
