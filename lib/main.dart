@@ -363,6 +363,20 @@ class BudgetCalendarHome extends StatefulWidget {
   State<BudgetCalendarHome> createState() => _BudgetCalendarHomeState();
 }
 
+class _MonthSummaryCacheEntry {
+  const _MonthSummaryCacheEntry({
+    required this.metricsRevision,
+    required this.monthIncomePennies,
+    required this.monthExpensePennies,
+    required this.runningBalancePennies,
+  });
+
+  final int metricsRevision;
+  final int monthIncomePennies;
+  final int monthExpensePennies;
+  final int runningBalancePennies;
+}
+
 class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     with WindowListener, TrayListener {
   late DateTime _focusedMonth;
@@ -384,6 +398,8 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   String _lastResizeLayoutKey = '';
   bool _trayInitialized = false;
   bool _lastMinimizeToTray = false;
+  int _lastMetricsRevision = 0;
+  final Map<String, _MonthSummaryCacheEntry> _monthSummaryCache = {};
 
   static const String _trayMenuShowKey = 'show_window';
   static const String _trayMenuExitKey = 'exit_app';
@@ -398,6 +414,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     _loadPanelOrderFromStore();
     _lastResizeLayoutKey = _resizeLayoutKey();
     _lastMinimizeToTray = widget.store.minimizeToTray;
+    _lastMetricsRevision = widget.store.metricsRevision;
     widget.store.addListener(_onStoreChanged);
     if (_isWindowsDesktop) {
       _initWindowSizing();
@@ -423,6 +440,10 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   }
 
   void _onStoreChanged() {
+    if (_lastMetricsRevision != widget.store.metricsRevision) {
+      _lastMetricsRevision = widget.store.metricsRevision;
+      _monthSummaryCache.clear();
+    }
     if (!_isWindowsDesktop) return;
     if (_lastMinimizeToTray != widget.store.minimizeToTray) {
       _lastMinimizeToTray = widget.store.minimizeToTray;
@@ -922,12 +943,11 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
 
   Widget _buildMonthView(DateTime month) {
     final store = widget.store;
-    final monthIncome = store.sumMonthIncomePennies(month);
-    final monthExpenses = store.sumMonthExpensePennies(month);
+    final monthSummary = _getMonthSummary(store, month);
+    final monthIncome = monthSummary.monthIncomePennies;
+    final monthExpenses = monthSummary.monthExpensePennies;
     final monthBalance = monthIncome - monthExpenses;
-
-    final monthEnd = DateTime(month.year, month.month + 1, 0);
-    final runningBalance = store.runningBalancePennies(monthEnd);
+    final runningBalance = monthSummary.runningBalancePennies;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -988,6 +1008,26 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
         );
       },
     );
+  }
+
+  _MonthSummaryCacheEntry _getMonthSummary(BudgetStore store, DateTime month) {
+    final monthKey = '${month.year}-${month.month}';
+    final cached = _monthSummaryCache[monthKey];
+    if (cached != null && cached.metricsRevision == store.metricsRevision) {
+      return cached;
+    }
+    final monthIncome = store.sumMonthIncomePennies(month);
+    final monthExpenses = store.sumMonthExpensePennies(month);
+    final monthEnd = DateTime(month.year, month.month + 1, 0);
+    final runningBalance = store.runningBalancePennies(monthEnd);
+    final entry = _MonthSummaryCacheEntry(
+      metricsRevision: store.metricsRevision,
+      monthIncomePennies: monthIncome,
+      monthExpensePennies: monthExpenses,
+      runningBalancePennies: runningBalance,
+    );
+    _monthSummaryCache[monthKey] = entry;
+    return entry;
   }
 
   Future<void> _openDayDialog(

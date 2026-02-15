@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Added month-summary caching for page transitions: month income/expense/month-end running balance are now memoized by month and invalidated only on financial-data changes, reducing build-thread spikes during month-switch animations.
 - Reduced month-switch jank in calendar day tiles by precomputing day hover running balances once per month grid (instead of recalculating historical running balance per tile) and reusing a single tooltip currency formatter.
 - Improved month page-switch smoothness: removed an extra full rebuild on `onPageChanged` and tuned month navigation animation to a shorter `easeOutCubic` transition.
 - Reverted Windows accent-color panel tinting and set a fixed default dark-mode panel background (`surfaceContainerLow`) to `#1F1F1F`.

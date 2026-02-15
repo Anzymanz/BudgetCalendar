@@ -190,6 +190,7 @@ class BudgetStore extends ChangeNotifier {
   final List<BudgetBackup> _backups;
   final Map<String, List<BudgetEntry>> _income;
   final Map<String, List<BudgetEntry>> _expenses;
+  int _metricsRevision = 0;
 
   static const List<String> _defaultPanelOrder = <String>[
     'date',
@@ -198,6 +199,11 @@ class BudgetStore extends ChangeNotifier {
   ];
 
   int get backupCount => _backups.length;
+  int get metricsRevision => _metricsRevision;
+
+  void _bumpMetricsRevision() {
+    _metricsRevision += 1;
+  }
 
   static Future<BudgetStore> load() async {
     final persistence = createPersistence();
@@ -524,6 +530,7 @@ class BudgetStore extends ChangeNotifier {
     final map = type == EntryType.income ? _income : _expenses;
     final list = map.putIfAbsent(dayKey, () => <BudgetEntry>[]);
     list.add(entry);
+    _bumpMetricsRevision();
     await _save();
     notifyListeners();
   }
@@ -541,6 +548,7 @@ class BudgetStore extends ChangeNotifier {
       final list = map.putIfAbsent(key, () => <BudgetEntry>[]);
       list.add(entry.copyWith());
     }
+    _bumpMetricsRevision();
     await _save();
     notifyListeners();
   }
@@ -555,6 +563,7 @@ class BudgetStore extends ChangeNotifier {
     final list = map[dayKey];
     if (list == null || index < 0 || index >= list.length) return;
     list[index] = entry;
+    _bumpMetricsRevision();
     await _save();
     notifyListeners();
   }
@@ -565,6 +574,7 @@ class BudgetStore extends ChangeNotifier {
     if (list == null || index < 0 || index >= list.length) return;
     list.removeAt(index);
     if (list.isEmpty) map.remove(dayKey);
+    _bumpMetricsRevision();
     await _save();
     notifyListeners();
   }
@@ -803,6 +813,7 @@ class BudgetStore extends ChangeNotifier {
     }
     if (startingBalance != null) {
       startingBalancePennies = startingBalance;
+      _bumpMetricsRevision();
     }
     if (monthlyBudget != null) {
       monthlyBudgetPennies = math.max(0, monthlyBudget);
@@ -930,6 +941,7 @@ class BudgetStore extends ChangeNotifier {
       _expenses
         ..clear()
         ..addAll(parsedExpenses);
+      _bumpMetricsRevision();
 
       final parsedBackups = _parseBackups(settings);
       if (parsedBackups.isNotEmpty) {
