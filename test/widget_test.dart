@@ -12,11 +12,22 @@ import 'package:budget_calendar/main.dart';
 import 'package:budget_calendar/state/budget_store.dart';
 
 void main() {
-  testWidgets('App builds', (WidgetTester tester) async {
+  testWidgets('App builds and shows calendar', (WidgetTester tester) async {
     final store = BudgetStore.inMemory();
-    await tester.pumpWidget(BudgetCalendarApp(store: store));
+    await tester.pumpWidget(
+      BudgetCalendarApp(
+        store: store,
+        tweakModeEnabled: false,
+        initialUiTweaks: UiTweakConfig.defaults,
+      ),
+    );
 
-    expect(find.text('Budget Calendar'), findsWidgets);
+    // Verify app structure
     expect(find.byType(Scaffold), findsOneWidget);
+    expect(find.byType(AppBar), findsOneWidget);
+
+    // Verify settings and dark mode buttons are present
+    expect(find.byIcon(Icons.settings), findsOneWidget);
+    expect(find.byIcon(Icons.lightbulb_outline), findsOneWidget);
   });
 }

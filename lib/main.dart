@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,17 +22,28 @@ String formatCurrency(BudgetStore store, int pennies) {
 
 const _windowWidthPrefKey = 'window_width';
 const _windowHeightPrefKey = 'window_height';
-const _compactMetricBaseWidth = 620.0;
+const _uiTweaksPrefKey = 'ui_tweaks_v1';
+const _defaultCompactMetricBaseWidth = 620.0;
 
-double _compactMetricWidthThreshold(double textScaleFactor) {
+double _compactMetricWidthThreshold(
+  double textScaleFactor, {
+  required double baseWidth,
+}) {
   final scale = textScaleFactor.clamp(1.0, 2.0);
-  return _compactMetricBaseWidth * scale;
+  return baseWidth * scale;
 }
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  final tweakMode =
+      args.contains('-tweak') ||
+      args.contains('--tweak') ||
+      args.contains('/tweak');
+  final prefs = await SharedPreferences.getInstance();
+  final initialTweaks = UiTweakConfig.fromJsonString(
+    prefs.getString(_uiTweaksPrefKey),
+  );
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
-    final prefs = await SharedPreferences.getInstance();
     final savedWidth = prefs.getDouble(_windowWidthPrefKey);
     final savedHeight = prefs.getDouble(_windowHeightPrefKey);
     await windowManager.ensureInitialized();
@@ -47,13 +59,26 @@ Future<void> main() async {
     });
   }
   final store = await BudgetStore.load();
-  runApp(BudgetCalendarApp(store: store));
+  runApp(
+    BudgetCalendarApp(
+      store: store,
+      tweakModeEnabled: tweakMode,
+      initialUiTweaks: initialTweaks,
+    ),
+  );
 }
 
 class BudgetCalendarApp extends StatelessWidget {
-  const BudgetCalendarApp({super.key, required this.store});
+  const BudgetCalendarApp({
+    super.key,
+    required this.store,
+    required this.tweakModeEnabled,
+    required this.initialUiTweaks,
+  });
 
   final BudgetStore store;
+  final bool tweakModeEnabled;
+  final UiTweakConfig initialUiTweaks;
 
   @override
   Widget build(BuildContext context) {
@@ -347,7 +372,11 @@ class BudgetCalendarApp extends StatelessWidget {
               child: child ?? const SizedBox.shrink(),
             );
           },
-          home: BudgetCalendarHome(store: store),
+          home: BudgetCalendarHome(
+            store: store,
+            tweakModeEnabled: tweakModeEnabled,
+            initialUiTweaks: initialUiTweaks,
+          ),
         );
       },
     );
@@ -355,9 +384,16 @@ class BudgetCalendarApp extends StatelessWidget {
 }
 
 class BudgetCalendarHome extends StatefulWidget {
-  const BudgetCalendarHome({super.key, required this.store});
+  const BudgetCalendarHome({
+    super.key,
+    required this.store,
+    required this.tweakModeEnabled,
+    required this.initialUiTweaks,
+  });
 
   final BudgetStore store;
+  final bool tweakModeEnabled;
+  final UiTweakConfig initialUiTweaks;
 
   @override
   State<BudgetCalendarHome> createState() => _BudgetCalendarHomeState();
@@ -375,6 +411,221 @@ class _MonthSummaryCacheEntry {
   final int monthIncomePennies;
   final int monthExpensePennies;
   final int runningBalancePennies;
+}
+
+class UiTweakConfig {
+  const UiTweakConfig({
+    required this.compactMetricBaseWidth,
+    required this.metricCompactMinCardWidth,
+    required this.metricExpandedMinCardWidth,
+    required this.dayNumberBoxWidthBase,
+    required this.dayNumberBoxWidthBoost,
+    required this.dayNumberBoxHeightBase,
+    required this.dayNumberBoxHeightBoost,
+    required this.dayNumberBaseFont,
+    required this.dayNumberFontBoost,
+    required this.badgeBaseSmallFont,
+    required this.badgeBaseLargeFont,
+    required this.badgeFontBoost,
+    required this.amountBaseSmallFont,
+    required this.amountBaseLargeFont,
+    required this.amountFontBoost,
+    required this.showEntryBadgeMinCell,
+    required this.showDayBalanceMinCell,
+  });
+
+  static const defaults = UiTweakConfig(
+    compactMetricBaseWidth: _defaultCompactMetricBaseWidth,
+    metricCompactMinCardWidth: 140,
+    metricExpandedMinCardWidth: 165,
+    dayNumberBoxWidthBase: 0.58,
+    dayNumberBoxWidthBoost: 0.08,
+    dayNumberBoxHeightBase: 0.42,
+    dayNumberBoxHeightBoost: 0.08,
+    dayNumberBaseFont: 19,
+    dayNumberFontBoost: 3,
+    badgeBaseSmallFont: 9,
+    badgeBaseLargeFont: 10,
+    badgeFontBoost: 0.35,
+    amountBaseSmallFont: 12,
+    amountBaseLargeFont: 13,
+    amountFontBoost: 0.45,
+    showEntryBadgeMinCell: 46,
+    showDayBalanceMinCell: 58,
+  );
+
+  final double compactMetricBaseWidth;
+  final double metricCompactMinCardWidth;
+  final double metricExpandedMinCardWidth;
+  final double dayNumberBoxWidthBase;
+  final double dayNumberBoxWidthBoost;
+  final double dayNumberBoxHeightBase;
+  final double dayNumberBoxHeightBoost;
+  final double dayNumberBaseFont;
+  final double dayNumberFontBoost;
+  final double badgeBaseSmallFont;
+  final double badgeBaseLargeFont;
+  final double badgeFontBoost;
+  final double amountBaseSmallFont;
+  final double amountBaseLargeFont;
+  final double amountFontBoost;
+  final double showEntryBadgeMinCell;
+  final double showDayBalanceMinCell;
+
+  UiTweakConfig copyWith({
+    double? compactMetricBaseWidth,
+    double? metricCompactMinCardWidth,
+    double? metricExpandedMinCardWidth,
+    double? dayNumberBoxWidthBase,
+    double? dayNumberBoxWidthBoost,
+    double? dayNumberBoxHeightBase,
+    double? dayNumberBoxHeightBoost,
+    double? dayNumberBaseFont,
+    double? dayNumberFontBoost,
+    double? badgeBaseSmallFont,
+    double? badgeBaseLargeFont,
+    double? badgeFontBoost,
+    double? amountBaseSmallFont,
+    double? amountBaseLargeFont,
+    double? amountFontBoost,
+    double? showEntryBadgeMinCell,
+    double? showDayBalanceMinCell,
+  }) {
+    return UiTweakConfig(
+      compactMetricBaseWidth:
+          compactMetricBaseWidth ?? this.compactMetricBaseWidth,
+      metricCompactMinCardWidth:
+          metricCompactMinCardWidth ?? this.metricCompactMinCardWidth,
+      metricExpandedMinCardWidth:
+          metricExpandedMinCardWidth ?? this.metricExpandedMinCardWidth,
+      dayNumberBoxWidthBase:
+          dayNumberBoxWidthBase ?? this.dayNumberBoxWidthBase,
+      dayNumberBoxWidthBoost:
+          dayNumberBoxWidthBoost ?? this.dayNumberBoxWidthBoost,
+      dayNumberBoxHeightBase:
+          dayNumberBoxHeightBase ?? this.dayNumberBoxHeightBase,
+      dayNumberBoxHeightBoost:
+          dayNumberBoxHeightBoost ?? this.dayNumberBoxHeightBoost,
+      dayNumberBaseFont: dayNumberBaseFont ?? this.dayNumberBaseFont,
+      dayNumberFontBoost: dayNumberFontBoost ?? this.dayNumberFontBoost,
+      badgeBaseSmallFont: badgeBaseSmallFont ?? this.badgeBaseSmallFont,
+      badgeBaseLargeFont: badgeBaseLargeFont ?? this.badgeBaseLargeFont,
+      badgeFontBoost: badgeFontBoost ?? this.badgeFontBoost,
+      amountBaseSmallFont: amountBaseSmallFont ?? this.amountBaseSmallFont,
+      amountBaseLargeFont: amountBaseLargeFont ?? this.amountBaseLargeFont,
+      amountFontBoost: amountFontBoost ?? this.amountFontBoost,
+      showEntryBadgeMinCell:
+          showEntryBadgeMinCell ?? this.showEntryBadgeMinCell,
+      showDayBalanceMinCell:
+          showDayBalanceMinCell ?? this.showDayBalanceMinCell,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'compact_metric_base_width': compactMetricBaseWidth,
+      'metric_compact_min_card_width': metricCompactMinCardWidth,
+      'metric_expanded_min_card_width': metricExpandedMinCardWidth,
+      'day_number_box_width_base': dayNumberBoxWidthBase,
+      'day_number_box_width_boost': dayNumberBoxWidthBoost,
+      'day_number_box_height_base': dayNumberBoxHeightBase,
+      'day_number_box_height_boost': dayNumberBoxHeightBoost,
+      'day_number_base_font': dayNumberBaseFont,
+      'day_number_font_boost': dayNumberFontBoost,
+      'badge_base_small_font': badgeBaseSmallFont,
+      'badge_base_large_font': badgeBaseLargeFont,
+      'badge_font_boost': badgeFontBoost,
+      'amount_base_small_font': amountBaseSmallFont,
+      'amount_base_large_font': amountBaseLargeFont,
+      'amount_font_boost': amountFontBoost,
+      'show_entry_badge_min_cell': showEntryBadgeMinCell,
+      'show_day_balance_min_cell': showDayBalanceMinCell,
+    };
+  }
+
+  String toJsonString() => jsonEncode(toMap());
+
+  static UiTweakConfig fromJsonString(String? jsonText) {
+    if (jsonText == null || jsonText.trim().isEmpty) {
+      return UiTweakConfig.defaults;
+    }
+    try {
+      final decoded = jsonDecode(jsonText);
+      if (decoded is! Map<String, dynamic>) {
+        return UiTweakConfig.defaults;
+      }
+      double readNum(String key, double fallback) {
+        final value = decoded[key];
+        if (value is num) return value.toDouble();
+        return fallback;
+      }
+
+      final d = UiTweakConfig.defaults;
+      return UiTweakConfig(
+        compactMetricBaseWidth: readNum(
+          'compact_metric_base_width',
+          d.compactMetricBaseWidth,
+        ),
+        metricCompactMinCardWidth: readNum(
+          'metric_compact_min_card_width',
+          d.metricCompactMinCardWidth,
+        ),
+        metricExpandedMinCardWidth: readNum(
+          'metric_expanded_min_card_width',
+          d.metricExpandedMinCardWidth,
+        ),
+        dayNumberBoxWidthBase: readNum(
+          'day_number_box_width_base',
+          d.dayNumberBoxWidthBase,
+        ),
+        dayNumberBoxWidthBoost: readNum(
+          'day_number_box_width_boost',
+          d.dayNumberBoxWidthBoost,
+        ),
+        dayNumberBoxHeightBase: readNum(
+          'day_number_box_height_base',
+          d.dayNumberBoxHeightBase,
+        ),
+        dayNumberBoxHeightBoost: readNum(
+          'day_number_box_height_boost',
+          d.dayNumberBoxHeightBoost,
+        ),
+        dayNumberBaseFont: readNum('day_number_base_font', d.dayNumberBaseFont),
+        dayNumberFontBoost: readNum(
+          'day_number_font_boost',
+          d.dayNumberFontBoost,
+        ),
+        badgeBaseSmallFont: readNum(
+          'badge_base_small_font',
+          d.badgeBaseSmallFont,
+        ),
+        badgeBaseLargeFont: readNum(
+          'badge_base_large_font',
+          d.badgeBaseLargeFont,
+        ),
+        badgeFontBoost: readNum('badge_font_boost', d.badgeFontBoost),
+        amountBaseSmallFont: readNum(
+          'amount_base_small_font',
+          d.amountBaseSmallFont,
+        ),
+        amountBaseLargeFont: readNum(
+          'amount_base_large_font',
+          d.amountBaseLargeFont,
+        ),
+        amountFontBoost: readNum('amount_font_boost', d.amountFontBoost),
+        showEntryBadgeMinCell: readNum(
+          'show_entry_badge_min_cell',
+          d.showEntryBadgeMinCell,
+        ),
+        showDayBalanceMinCell: readNum(
+          'show_day_balance_min_cell',
+          d.showDayBalanceMinCell,
+        ),
+      );
+    } catch (_) {
+      return UiTweakConfig.defaults;
+    }
+  }
 }
 
 class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
@@ -400,6 +651,8 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   bool _trayInitialized = false;
   bool _lastMinimizeToTray = false;
   int _lastMetricsRevision = 0;
+  int _uiTweaksRevision = 0;
+  late UiTweakConfig _uiTweaks;
   final Map<String, _MonthSummaryCacheEntry> _monthSummaryCache = {};
 
   static const String _trayMenuShowKey = 'show_window';
@@ -416,6 +669,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     _lastResizeLayoutKey = _resizeLayoutKey();
     _lastMinimizeToTray = widget.store.minimizeToTray;
     _lastMetricsRevision = widget.store.metricsRevision;
+    _uiTweaks = widget.initialUiTweaks;
     widget.store.addListener(_onStoreChanged);
     if (_isWindowsDesktop) {
       _initWindowSizing();
@@ -622,7 +876,10 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   double _recommendedWindowHeight(double windowWidth) {
     final hideMetricTitles =
         windowWidth <
-        _compactMetricWidthThreshold(widget.store.textScaleFactor);
+        _compactMetricWidthThreshold(
+          widget.store.textScaleFactor,
+          baseWidth: _uiTweaks.compactMetricBaseWidth,
+        );
     final textScale = widget.store.textScaleFactor;
     const metricSpacing = 10.0;
 
@@ -647,7 +904,11 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
       0.0,
       double.infinity,
     );
-    final minMetricCardWidth = (hideMetricTitles ? 140.0 : 165.0) * textScale;
+    final minMetricCardWidth =
+        (hideMetricTitles
+            ? _uiTweaks.metricCompactMinCardWidth
+            : _uiTweaks.metricExpandedMinCardWidth) *
+        textScale;
     final metricColumns = cardCount == 0
         ? 1
         : ((availableMetricsWidth + metricSpacing) ~/
@@ -703,6 +964,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
 
     final compactThreshold = _compactMetricWidthThreshold(
       store.textScaleFactor,
+      baseWidth: _uiTweaks.compactMetricBaseWidth,
     );
     final widthWantsCompact = contentWidth < compactThreshold;
     if (!widthWantsCompact) return true;
@@ -713,8 +975,8 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
       0.0,
       double.infinity,
     );
-    final compactMinWidth = 140.0 * textScale;
-    final expandedMinWidth = 165.0 * textScale;
+    final compactMinWidth = _uiTweaks.metricCompactMinCardWidth * textScale;
+    final expandedMinWidth = _uiTweaks.metricExpandedMinCardWidth * textScale;
 
     final compactColumns =
         ((availableMetricsWidth + metricSpacing) ~/
@@ -868,6 +1130,14 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     if (!_isWindowsDesktop) {
       return AppBar(
         actions: [
+          if (widget.tweakModeEnabled)
+            Tooltip(
+              message: 'UI Tweak Lab',
+              child: IconButton(
+                onPressed: () => _openUiTweaksDialog(context),
+                icon: const Icon(Icons.tune),
+              ),
+            ),
           Tooltip(
             message: 'Settings',
             child: IconButton(
@@ -923,6 +1193,14 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
                   icon: const Icon(Icons.settings),
                 ),
               ),
+              if (widget.tweakModeEnabled)
+                Tooltip(
+                  message: 'UI Tweak Lab',
+                  child: IconButton(
+                    onPressed: () => _openUiTweaksDialog(context),
+                    icon: const Icon(Icons.tune),
+                  ),
+                ),
               Tooltip(
                 message: widget.store.darkMode
                     ? 'Disable dark mode'
@@ -997,6 +1275,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
                 type: _PanelType.totals,
                 child: _TotalsPanel(
                   store: store,
+                  uiTweaks: _uiTweaks,
                   monthIncomePennies: monthIncome,
                   monthExpensePennies: monthExpenses,
                   monthBalancePennies: monthBalance,
@@ -1012,6 +1291,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
                   context: context,
                   store: store,
                   month: month,
+                  uiTweaks: _uiTweaks,
                   enableDragDrop: true,
                   enableHoverTooltips: !isPageInMotion,
                 ),
@@ -1020,9 +1300,14 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
           }
         }
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
-          child: Column(children: orderedPanels),
+        return KeyedSubtree(
+          key: ValueKey<String>(
+            '${month.year}-${month.month}-$_uiTweaksRevision',
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+            child: Column(children: orderedPanels),
+          ),
         );
       },
     );
@@ -1067,7 +1352,31 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   ) async {
     await showDialog<void>(
       context: context,
-      builder: (context) => _SettingsDialog(store: store),
+      builder: (context) => _SettingsDialog(
+        store: store,
+        showTweakControls: widget.tweakModeEnabled,
+        onOpenUiTweaks: widget.tweakModeEnabled
+            ? () => _openUiTweaksDialog(context)
+            : null,
+      ),
+    );
+  }
+
+  Future<void> _openUiTweaksDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => _UiTweaksDialog(
+        initial: _uiTweaks,
+        onApply: (config) => _setUiTweaks(config),
+        onApplyAndReload: (config) async {
+          await _setUiTweaks(config);
+          _reloadLayoutForTweaks();
+        },
+        onResetToDefaults: () async {
+          await _resetUiTweaks();
+          _reloadLayoutForTweaks();
+        },
+      ),
     );
   }
 
@@ -1171,10 +1480,34 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     );
   }
 
+  Future<void> _persistUiTweaks() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_uiTweaksPrefKey, _uiTweaks.toJsonString());
+  }
+
+  Future<void> _setUiTweaks(UiTweakConfig config) async {
+    setState(() {
+      _uiTweaks = config;
+    });
+    await _persistUiTweaks();
+  }
+
+  Future<void> _resetUiTweaks() async {
+    await _setUiTweaks(UiTweakConfig.defaults);
+  }
+
+  void _reloadLayoutForTweaks() {
+    setState(() {
+      _uiTweaksRevision += 1;
+      _monthSummaryCache.clear();
+    });
+  }
+
   Widget _buildCalendarPanel({
     required BuildContext context,
     required BudgetStore store,
     required DateTime month,
+    required UiTweakConfig uiTweaks,
     required bool enableDragDrop,
     required bool enableHoverTooltips,
   }) {
@@ -1184,6 +1517,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
       child: _CalendarGrid(
         store: store,
         focusedMonth: month,
+        uiTweaks: uiTweaks,
         enableHoverTooltips: enableHoverTooltips,
         onOpenDay: (day) => _openDayDialog(context, store, day),
       ),
@@ -1415,6 +1749,7 @@ class _MonthHeader extends StatelessWidget {
 class _TotalsPanel extends StatelessWidget {
   const _TotalsPanel({
     required this.store,
+    required this.uiTweaks,
     required this.monthIncomePennies,
     required this.monthExpensePennies,
     required this.monthBalancePennies,
@@ -1423,6 +1758,7 @@ class _TotalsPanel extends StatelessWidget {
   });
 
   final BudgetStore store;
+  final UiTweakConfig uiTweaks;
   final int monthIncomePennies;
   final int monthExpensePennies;
   final int monthBalancePennies;
@@ -1440,6 +1776,7 @@ class _TotalsPanel extends StatelessWidget {
       builder: (context, constraints) {
         final compactThreshold = _compactMetricWidthThreshold(
           store.textScaleFactor,
+          baseWidth: uiTweaks.compactMetricBaseWidth,
         );
         final iconOnlyMetrics =
             constraints.maxWidth < compactThreshold && !preferExpandedMetrics;
@@ -1449,7 +1786,10 @@ class _TotalsPanel extends StatelessWidget {
           double.infinity,
         );
         final minMetricCardWidth =
-            (iconOnlyMetrics ? 140.0 : 165.0) * store.textScaleFactor;
+            (iconOnlyMetrics
+                ? uiTweaks.metricCompactMinCardWidth
+                : uiTweaks.metricExpandedMinCardWidth) *
+            store.textScaleFactor;
 
         final metricCards = <Widget>[];
         if (showAnyBalance) {
@@ -1690,12 +2030,14 @@ class _CalendarGrid extends StatelessWidget {
   const _CalendarGrid({
     required this.store,
     required this.focusedMonth,
+    required this.uiTweaks,
     required this.enableHoverTooltips,
     required this.onOpenDay,
   });
 
   final BudgetStore store;
   final DateTime focusedMonth;
+  final UiTweakConfig uiTweaks;
   final bool enableHoverTooltips;
   final ValueChanged<DateTime> onOpenDay;
 
@@ -1744,15 +2086,20 @@ class _CalendarGrid extends StatelessWidget {
     final isHighContrast = store.highContrastMode;
     final isDark = store.darkMode;
     final magnificationBoost = (uiScale - 1.0).clamp(0.0, 1.5);
-    final dayNumberBoxWidthFactor = (0.58 + (magnificationBoost * 0.08)).clamp(
-      0.58,
-      0.72,
-    );
-    final dayNumberBoxHeightFactor = (0.42 + (magnificationBoost * 0.08))
-        .clamp(0.42, 0.56);
-    final dayNumberBaseFont = 19.0 + (magnificationBoost * 3.0);
-    final badgeFontScale = 1.0 + (magnificationBoost * 0.35);
-    final amountFontScale = 1.0 + (magnificationBoost * 0.45);
+    final dayNumberBoxWidthFactor =
+        (uiTweaks.dayNumberBoxWidthBase +
+                (magnificationBoost * uiTweaks.dayNumberBoxWidthBoost))
+            .clamp(0.45, 0.82);
+    final dayNumberBoxHeightFactor =
+        (uiTweaks.dayNumberBoxHeightBase +
+                (magnificationBoost * uiTweaks.dayNumberBoxHeightBoost))
+            .clamp(0.32, 0.70);
+    final dayNumberBaseFont =
+        uiTweaks.dayNumberBaseFont +
+        (magnificationBoost * uiTweaks.dayNumberFontBoost);
+    final badgeFontScale = 1.0 + (magnificationBoost * uiTweaks.badgeFontBoost);
+    final amountFontScale =
+        1.0 + (magnificationBoost * uiTweaks.amountFontBoost);
 
     final incomeBg = isHighContrast
         ? (isDark ? Colors.white : Colors.black)
@@ -1891,9 +2238,13 @@ class _CalendarGrid extends StatelessWidget {
 
                           final isToday = dayKey == todayKey;
                           final showEntryBadge =
-                              entryCount > 0 && cellSize >= (46.0 * uiScale);
+                              entryCount > 0 &&
+                              cellSize >=
+                                  (uiTweaks.showEntryBadgeMinCell * uiScale);
                           final showDayBalance =
-                              dayBalance != 0 && cellSize >= (58.0 * uiScale);
+                              dayBalance != 0 &&
+                              cellSize >=
+                                  (uiTweaks.showDayBalanceMinCell * uiScale);
                           Widget cell = InkWell(
                             onTap: () => onOpenDay(day),
                             borderRadius: BorderRadius.circular(12),
@@ -1971,7 +2322,11 @@ class _CalendarGrid extends StatelessWidget {
                                           '$entryCount',
                                           style: TextStyle(
                                             fontSize:
-                                                (cellSize >= 60 ? 10.0 : 9.0) *
+                                                (cellSize >= 60
+                                                    ? uiTweaks
+                                                          .badgeBaseLargeFont
+                                                    : uiTweaks
+                                                          .badgeBaseSmallFont) *
                                                 badgeFontScale,
                                             fontWeight: FontWeight.w600,
                                             color: isHighContrast
@@ -1999,7 +2354,10 @@ class _CalendarGrid extends StatelessWidget {
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontSize:
-                                              (cellSize >= 65 ? 13.0 : 12.0) *
+                                              (cellSize >= 65
+                                                  ? uiTweaks.amountBaseLargeFont
+                                                  : uiTweaks
+                                                        .amountBaseSmallFont) *
                                               amountFontScale,
                                           fontWeight: FontWeight.w600,
                                           color: isHighContrast
@@ -2472,9 +2830,15 @@ class _SummaryItem extends StatelessWidget {
 }
 
 class _SettingsDialog extends StatelessWidget {
-  const _SettingsDialog({required this.store});
+  const _SettingsDialog({
+    required this.store,
+    this.showTweakControls = false,
+    this.onOpenUiTweaks,
+  });
 
   final BudgetStore store;
+  final bool showTweakControls;
+  final VoidCallback? onOpenUiTweaks;
 
   @override
   Widget build(BuildContext context) {
@@ -2581,6 +2945,14 @@ class _SettingsDialog extends StatelessWidget {
                 onChanged: (v) =>
                     store.updateAccessibilitySettings(textScale: v),
               ),
+              if (showTweakControls) ...[
+                const SizedBox(height: 8),
+                FilledButton.tonalIcon(
+                  onPressed: onOpenUiTweaks,
+                  icon: const Icon(Icons.tune),
+                  label: const Text('Open UI Tweak Lab'),
+                ),
+              ],
               const Divider(height: 32),
 
               Text(
@@ -2935,6 +3307,293 @@ class _SettingsDialog extends StatelessWidget {
       ),
     );
     return result;
+  }
+}
+
+class _UiTweaksDialog extends StatefulWidget {
+  const _UiTweaksDialog({
+    required this.initial,
+    required this.onApply,
+    required this.onApplyAndReload,
+    required this.onResetToDefaults,
+  });
+
+  final UiTweakConfig initial;
+  final Future<void> Function(UiTweakConfig config) onApply;
+  final Future<void> Function(UiTweakConfig config) onApplyAndReload;
+  final Future<void> Function() onResetToDefaults;
+
+  @override
+  State<_UiTweaksDialog> createState() => _UiTweaksDialogState();
+}
+
+class _UiTweaksDialogState extends State<_UiTweaksDialog> {
+  late UiTweakConfig _draft;
+
+  @override
+  void initState() {
+    super.initState();
+    _draft = widget.initial;
+  }
+
+  Future<void> _copyValues() async {
+    final payload = const JsonEncoder.withIndent('  ').convert(_draft.toMap());
+    await Clipboard.setData(ClipboardData(text: payload));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Tweak values copied to clipboard.')),
+    );
+  }
+
+  Widget _slider({
+    required String label,
+    required double value,
+    required double min,
+    required double max,
+    required int divisions,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('$label: ${value.toStringAsFixed(2)}'),
+        Slider(
+          value: value.clamp(min, max),
+          min: min,
+          max: max,
+          divisions: divisions,
+          label: value.toStringAsFixed(2),
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('UI Tweak Lab'),
+      content: SizedBox(
+        width: 760,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Adjust sizing ratios and limits used for day/metric cards. '
+                'Use Apply for live updates or Apply + Reload for a full layout rebuild.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              _slider(
+                label: 'Compact Threshold Base Width',
+                value: _draft.compactMetricBaseWidth,
+                min: 420,
+                max: 980,
+                divisions: 56,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(compactMetricBaseWidth: v),
+                ),
+              ),
+              _slider(
+                label: 'Metric Compact Min Card Width',
+                value: _draft.metricCompactMinCardWidth,
+                min: 100,
+                max: 240,
+                divisions: 28,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(metricCompactMinCardWidth: v),
+                ),
+              ),
+              _slider(
+                label: 'Metric Expanded Min Card Width',
+                value: _draft.metricExpandedMinCardWidth,
+                min: 120,
+                max: 300,
+                divisions: 36,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(metricExpandedMinCardWidth: v),
+                ),
+              ),
+              const Divider(),
+              _slider(
+                label: 'Day Number Box Width Base',
+                value: _draft.dayNumberBoxWidthBase,
+                min: 0.45,
+                max: 0.75,
+                divisions: 30,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(dayNumberBoxWidthBase: v),
+                ),
+              ),
+              _slider(
+                label: 'Day Number Box Width Boost',
+                value: _draft.dayNumberBoxWidthBoost,
+                min: 0.00,
+                max: 0.20,
+                divisions: 40,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(dayNumberBoxWidthBoost: v),
+                ),
+              ),
+              _slider(
+                label: 'Day Number Box Height Base',
+                value: _draft.dayNumberBoxHeightBase,
+                min: 0.32,
+                max: 0.62,
+                divisions: 30,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(dayNumberBoxHeightBase: v),
+                ),
+              ),
+              _slider(
+                label: 'Day Number Box Height Boost',
+                value: _draft.dayNumberBoxHeightBoost,
+                min: 0.00,
+                max: 0.20,
+                divisions: 40,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(dayNumberBoxHeightBoost: v),
+                ),
+              ),
+              _slider(
+                label: 'Day Number Base Font',
+                value: _draft.dayNumberBaseFont,
+                min: 12,
+                max: 30,
+                divisions: 36,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(dayNumberBaseFont: v),
+                ),
+              ),
+              _slider(
+                label: 'Day Number Font Boost',
+                value: _draft.dayNumberFontBoost,
+                min: 0,
+                max: 8,
+                divisions: 32,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(dayNumberFontBoost: v),
+                ),
+              ),
+              const Divider(),
+              _slider(
+                label: 'Badge Small Font',
+                value: _draft.badgeBaseSmallFont,
+                min: 7,
+                max: 14,
+                divisions: 28,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(badgeBaseSmallFont: v),
+                ),
+              ),
+              _slider(
+                label: 'Badge Large Font',
+                value: _draft.badgeBaseLargeFont,
+                min: 8,
+                max: 16,
+                divisions: 32,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(badgeBaseLargeFont: v),
+                ),
+              ),
+              _slider(
+                label: 'Badge Font Boost',
+                value: _draft.badgeFontBoost,
+                min: 0,
+                max: 1.2,
+                divisions: 48,
+                onChanged: (v) =>
+                    setState(() => _draft = _draft.copyWith(badgeFontBoost: v)),
+              ),
+              _slider(
+                label: 'Amount Small Font',
+                value: _draft.amountBaseSmallFont,
+                min: 9,
+                max: 18,
+                divisions: 36,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(amountBaseSmallFont: v),
+                ),
+              ),
+              _slider(
+                label: 'Amount Large Font',
+                value: _draft.amountBaseLargeFont,
+                min: 10,
+                max: 20,
+                divisions: 40,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(amountBaseLargeFont: v),
+                ),
+              ),
+              _slider(
+                label: 'Amount Font Boost',
+                value: _draft.amountFontBoost,
+                min: 0,
+                max: 1.2,
+                divisions: 48,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(amountFontBoost: v),
+                ),
+              ),
+              _slider(
+                label: 'Show Entry Badge Min Cell',
+                value: _draft.showEntryBadgeMinCell,
+                min: 28,
+                max: 72,
+                divisions: 44,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(showEntryBadgeMinCell: v),
+                ),
+              ),
+              _slider(
+                label: 'Show Day Balance Min Cell',
+                value: _draft.showDayBalanceMinCell,
+                min: 30,
+                max: 88,
+                divisions: 58,
+                onChanged: (v) => setState(
+                  () => _draft = _draft.copyWith(showDayBalanceMinCell: v),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton.icon(
+          onPressed: _copyValues,
+          icon: const Icon(Icons.content_copy),
+          label: const Text('Copy Values'),
+        ),
+        TextButton(
+          onPressed: () async {
+            await widget.onResetToDefaults();
+            if (!mounted) return;
+            setState(() => _draft = UiTweakConfig.defaults);
+          },
+          child: const Text('Reset Defaults'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+        FilledButton.tonal(
+          onPressed: () => widget.onApply(_draft),
+          child: const Text('Apply'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            await widget.onApplyAndReload(_draft);
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Applied and reloaded.')),
+            );
+          },
+          child: const Text('Apply + Reload'),
+        ),
+      ],
+    );
   }
 }
 

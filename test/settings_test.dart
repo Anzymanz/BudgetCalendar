@@ -15,8 +15,8 @@ void main() {
       expect(store.incomeColorDark, const Color(0xFF66BB6A));
       expect(store.expenseColorLight, const Color(0xFFC62828));
       expect(store.expenseColorDark, const Color(0xFFEF5350));
-      expect(store.bothColorLight, const Color(0xFF5C6F7D));
-      expect(store.bothColorDark, const Color(0xFF8F9CA8));
+      expect(store.bothColorLight, const Color(0xFFFFB74D));
+      expect(store.bothColorDark, const Color(0xFFFFB74D));
       expect(store.showMonthBalance, true);
       expect(store.showRunningBalance, true);
       expect(store.showDayRunningBalanceOnHover, true);
@@ -42,8 +42,8 @@ void main() {
       expect(settings['currency_symbol'], '£');
       expect(settings['starting_balance_pennies'], 0);
       expect(settings['monthly_budget_pennies'], 0);
-      expect(settings['both_color_light'], '#5C6F7D');
-      expect(settings['both_color_dark'], '#8F9CA8');
+      expect(settings['both_color_light'], '#FFB74D');
+      expect(settings['both_color_dark'], '#FFB74D');
       expect(settings['panel_order'], ['date', 'totals', 'calendar']);
       expect(settings['backups'], isA<List>());
     });

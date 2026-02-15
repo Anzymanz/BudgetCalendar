@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Added developer UI tuning mode via launch argument `-tweak`/`--tweak`, with a dedicated "UI Tweak Lab" secondary dialog to edit day-card and metric-card sizing ratios/limits, apply live, force layout reload, reset defaults, and copy current values to clipboard.
 - Increased day-card typography scaling response under magnification: day numbers, entry-count badges, and day-balance text now grow more noticeably at higher text-scale settings while remaining bounded to avoid overflow.
 - Updated default "income + expense on same day" color for both light and dark modes to `#FFB74D`.
 - Removed drag-wrapper state toggling during month-page motion to eliminate remaining panel "bulge" artifacts; drag/drop shells now stay structurally stable across transitions.
