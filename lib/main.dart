@@ -375,6 +375,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   ];
 
   static const int _initialPageIndex = 1000;
+  static const Duration _pageAnimDuration = Duration(milliseconds: 240);
   bool get _isWindowsDesktop =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
   bool _windowResizeScheduled = false;
@@ -768,15 +769,15 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
 
   void _goToPreviousMonth() {
     _pageController.previousPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
+      duration: _pageAnimDuration,
+      curve: Curves.easeOutCubic,
     );
   }
 
   void _goToNextMonth() {
     _pageController.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
+      duration: _pageAnimDuration,
+      curve: Curves.easeOutCubic,
     );
   }
 
@@ -789,8 +790,8 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
 
     _pageController.animateToPage(
       targetPage,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
+      duration: _pageAnimDuration,
+      curve: Curves.easeOutCubic,
     );
   }
 
@@ -812,9 +813,9 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
                 ? const PageScrollPhysics()
                 : const NeverScrollableScrollPhysics(),
             onPageChanged: (index) {
-              setState(() {
-                _focusedMonth = _monthForPageIndex(index);
-              });
+              // Keep this update non-reactive to avoid an extra full rebuild
+              // right after page animations settle.
+              _focusedMonth = _monthForPageIndex(index);
             },
             itemBuilder: (context, pageIndex) {
               final month = _monthForPageIndex(pageIndex);
