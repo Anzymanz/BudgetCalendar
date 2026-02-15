@@ -101,7 +101,7 @@ Future<void> main(List<String> args) async {
     final savedHeight = prefs.getDouble(_windowHeightPrefKey);
     await windowManager.ensureInitialized();
     final windowOptions = WindowOptions(
-      size: Size(savedWidth ?? 900, savedHeight ?? 680),
+      size: Size(savedWidth ?? 770, savedHeight ?? 887),
       minimumSize: Size(420, 560),
       center: true,
       titleBarStyle: TitleBarStyle.hidden,

@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Updated first-run/fallback window-size defaults to `770x887` on Windows (used when no saved window size exists).
 - Added tweak preset baseline controls: `Save Current as Default` now stores the current tweak values as your custom default, and `Reset to Default` now restores to that saved baseline (with factory defaults still used if no custom default exists).
 - Added true secondary-window support for the UI Tweak Lab on desktop Windows using `desktop_multi_window`: tweak controls can now open in a separate native window and sync applied values back to the main app window.
 - Enhanced UI Tweak Lab usability: added hover descriptions/tooltips for every tweakable control and changed the tweak interface to a draggable floating tool window (separate movable in-app window).
