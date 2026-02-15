@@ -1104,8 +1104,15 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     required Widget child,
     bool enableDragDrop = true,
   }) {
+    final panelShell = Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.transparent, width: 1),
+      ),
+      child: child,
+    );
     if (!enableDragDrop) {
-      return child;
+      return panelShell;
     }
     return DragTarget<_PanelType>(
       onWillAcceptWithDetails: (details) => details.data != type,
@@ -1158,8 +1165,8 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
                 ),
               ),
             ),
-            childWhenDragging: Opacity(opacity: 0.45, child: child),
-            child: child,
+            childWhenDragging: Opacity(opacity: 0.45, child: panelShell),
+            child: panelShell,
           ),
         );
       },
