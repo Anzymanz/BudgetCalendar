@@ -467,6 +467,11 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
 
   Future<void> _minimizeToTray() async {
     await _initTray();
+    // If Windows has already minimized the window, restore first so hide()
+    // transitions to a true hidden state and clears the taskbar button.
+    if (await windowManager.isMinimized()) {
+      await windowManager.restore();
+    }
     await windowManager.setSkipTaskbar(true);
     await windowManager.hide();
   }
