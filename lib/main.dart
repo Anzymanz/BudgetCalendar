@@ -1743,6 +1743,16 @@ class _CalendarGrid extends StatelessWidget {
     final todayKey = DateKey.fromDate(today);
     final isHighContrast = store.highContrastMode;
     final isDark = store.darkMode;
+    final magnificationBoost = (uiScale - 1.0).clamp(0.0, 1.5);
+    final dayNumberBoxWidthFactor = (0.58 + (magnificationBoost * 0.08)).clamp(
+      0.58,
+      0.72,
+    );
+    final dayNumberBoxHeightFactor = (0.42 + (magnificationBoost * 0.08))
+        .clamp(0.42, 0.56);
+    final dayNumberBaseFont = 19.0 + (magnificationBoost * 3.0);
+    final badgeFontScale = 1.0 + (magnificationBoost * 0.35);
+    final amountFontScale = 1.0 + (magnificationBoost * 0.45);
 
     final incomeBg = isHighContrast
         ? (isDark ? Colors.white : Colors.black)
@@ -1906,13 +1916,15 @@ class _CalendarGrid extends StatelessWidget {
                                   // Day number (centered)
                                   Center(
                                     child: SizedBox(
-                                      width: cellSize * 0.58,
-                                      height: cellSize * 0.42,
+                                      width: cellSize * dayNumberBoxWidthFactor,
+                                      height:
+                                          cellSize * dayNumberBoxHeightFactor,
                                       child: FittedBox(
                                         fit: BoxFit.scaleDown,
                                         child: Text(
                                           '$dayNumber',
                                           style: TextStyle(
+                                            fontSize: dayNumberBaseFont,
                                             fontWeight: isToday
                                                 ? FontWeight.w700
                                                 : FontWeight.w500,
@@ -1958,7 +1970,9 @@ class _CalendarGrid extends StatelessWidget {
                                         child: Text(
                                           '$entryCount',
                                           style: TextStyle(
-                                            fontSize: cellSize >= 60 ? 10 : 9,
+                                            fontSize:
+                                                (cellSize >= 60 ? 10.0 : 9.0) *
+                                                badgeFontScale,
                                             fontWeight: FontWeight.w600,
                                             color: isHighContrast
                                                 ? (bg.computeLuminance() > 0.5
@@ -1984,7 +1998,9 @@ class _CalendarGrid extends StatelessWidget {
                                         ),
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          fontSize: cellSize >= 65 ? 13 : 12,
+                                          fontSize:
+                                              (cellSize >= 65 ? 13.0 : 12.0) *
+                                              amountFontScale,
                                           fontWeight: FontWeight.w600,
                                           color: isHighContrast
                                               ? (bg.computeLuminance() > 0.5

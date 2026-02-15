@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Increased day-card typography scaling response under magnification: day numbers, entry-count badges, and day-balance text now grow more noticeably at higher text-scale settings while remaining bounded to avoid overflow.
 - Updated default "income + expense on same day" color for both light and dark modes to `#FFB74D`.
 - Removed drag-wrapper state toggling during month-page motion to eliminate remaining panel "bulge" artifacts; drag/drop shells now stay structurally stable across transitions.
 - Fixed month-switch "bulge" artifact by preserving a stable panel-shell container even when drag/drop wrappers are temporarily disabled during page motion.
