@@ -1,0 +1,95 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## 2026-02-14
+- Fixed installer tooling detection for Inno Setup: corrected Windows env-var path handling for `ProgramFiles(x86)`, added registry-based ISCC discovery, and added `-IsccPath` override in `scripts/build_installer.ps1`.
+- Added Windows installer packaging support via Inno Setup: new `installer/BudgetCalendar.iss`, plus one-command `scripts/build_installer.ps1` that builds Flutter Windows release and outputs `Setup.exe` into `dist\installer`.
+- Totals/data cards now avoid compact mode when there is enough spare calendar-panel height: cards can use additional rows/vertical space before collapsing into label-hidden compact mode.
+- Fixed high-magnification calendar clipping by sizing day-grid cells from the calendar panel's real post-layout constraints and removing default card margins that were stealing usable height.
+- Calendar day cells now prioritize day-number readability at high magnification: badge/balance overlays hide earlier based on scaled thresholds, and day number rendering scales down to fit safely.
+- Totals-card minimum responsive widths now scale with magnification, preventing value text from being obscured/truncated at high zoom by forcing earlier column wrap.
+- Compact-card trigger width is now proportional to magnification (`textScaleFactor`) instead of fixed, so shrinking behavior engages earlier at higher zoom levels.
+- Kept compact totals value text size consistent with normal cards (no downscaling when card height is reduced), and tightened compact-mode padding.
+- Compact totals cards now use reduced height/padding and place the icon in a fixed leading gutter next to the value, reclaiming vertical dead space.
+- In compact totals mode (labels hidden), cards now show icon inline to the left of the value instead of placing the icon on a separate row.
+- Inverted income/expense arrow directions across totals cards and day-entry popup controls/section headers.
+- Totals rows now each use full available row width, so partial rows (e.g., second row with fewer cards) stretch cards evenly and remove right-side gaps.
+- Totals panel now uses row-aware card sizing so partially filled rows expand cards to better use horizontal space while staying within min/max width bounds.
+- Lowered totals-card minimum responsive widths so cards can compress slightly more and keep more cards on the same row before wrapping.
+- Removed totals-panel resize animations that were causing flicker during window resize (`AnimatedContainer`/`AnimatedSize`), making panel reflow deterministic.
+- Tuned totals-card responsive strategy to prioritize fewer rows: cards now prefer smaller widths and higher column counts before wrapping.
+- Totals/data cards now use bounded responsive sizing with both minimum and maximum widths, preventing over-expansion and reducing resize snap behavior.
+- Reworked totals/data panel responsiveness: dynamic column count now scales with available width (up to all visible cards), replacing hard 2/3-column breakpoints.
+- Added smooth card/grid transition animations during resize to reduce jumpy reflow behavior.
+- Data cards now resize vertically (no fixed aspect ratio) and enforce a minimum target card width when computing responsive columns.
+- Totals/data cards now resize as uniform responsive tiles (like day cards), with automatic 3-column and 2-column wrapping as the window narrows.
+- Compact totals mode now shows `icon + value` and hides only metric titles (instead of icon-only).
+- Added new settings toggle: `Show Day Running Balance On Hover`, including persisted behavior in storage/import/export.
+- Improved high-magnification calendar fit: day-label sizing and grid calculations are now text-scale aware, and rigid minimum grid-size clamps were removed to prevent day-square clipping.
+- Reduced Windows minimum app width from `760` to `420` and removed fixed month-header spacer width, eliminating remaining hard width constraints.
+- Totals data panel no longer enforces a practical minimum width: metric cards now stack vertically on narrow windows.
+- Removed fixed content width cap so horizontal window resizing scales layout again.
+- Calendar day cards now always remain square while expanding with available space; no card stretching.
+- Responsive compact mode now hides totals text and shows icon-only metric cards when the window is narrow.
+- Calendar days panel now always vertically autosizes to fill available panel height, reducing bottom dead space.
+- Added Windows window-size persistence (`width`/`height`) with initial vertical content sizing on first run.
+- Window height now auto-adjusts to content when settings changes alter visible UI sections.
+- Windows desktop now uses a custom in-app title bar with native minimize and close buttons, and hidden OS title frame.
+- Month label is now clickable with a scroll-wheel month selector (matching year selection UX); removed selector arrow icons for month/year controls.
+- High-contrast mode now applies consistently to dialogs and settings popups via explicit dialog/input high-contrast theming.
+- Persisted draggable panel layout order (`date` / `totals` / `calendar`) so panel positions survive app restarts.
+- Calendar now always renders every day of the selected month, even when there are no entries.
+- Implemented functional high-contrast rendering in calendar cells (strong foreground/background separation and explicit borders).
+- Added configurable dual-entry day colors (for days that have both income and expense) in both light and dark modes.
+- Restored year-change UX by making the year clickable in the month header and adding a scroll-wheel year selector.
+- Updated app theming to a neutral grey dark palette (removed previous green-tinted dark mode surfaces).
+- Initial Flutter port (month view, per-day income/expense entries, monthly totals, running balance on hover, dark mode).
+- Desktop UI layout fixes (centered content, improved totals table, sane calendar sizing).
+- UI polish: move dark mode toggle to app bar (no overlap), tighten totals spacing, reduce max calendar tile size.
+- **Major UI Improvements:**
+  - Enhanced calendar cells with entry count badges and day balance display for better information density.
+  - Added Quick-Add floating action button for faster data entry (speed-dial style with income/expense options).
+  - Redesigned totals panel with card-based layout, icons, and color-coded balances for improved visual hierarchy.
+  - Added mobile swipe gestures for month navigation (iOS/Android only).
+  - Improved day entry dialog with summary card showing day totals, full-screen mode on mobile, and better visual separation.
+  - Added empty state messaging with friendly call-to-action when month has no entries.
+  - Enhanced month navigation with "Today" button for quick return to current month.
+  - Improved color scheme with better dark mode contrast and consistent color coding throughout the app.
+- **Bug Fixes:**
+  - Fixed month navigation skipping months (incorrect page index calculation).
+  - Fixed calendar days being cut off by using Expanded layout and dynamic cell sizing based on available vertical space.
+  - Calendar now properly sizes cells to fit both horizontal and vertical constraints.
+  - Restored proper text sizes and spacing after initial over-correction.
+  - Removed date picker from month label (temporary, will be re-added later with better UX).
+  - Simplified and improved day entries dialog layout for better readability.
+  - Fixed entry display issues when navigating between months.
+- **Data Storage:**
+  - Changed Windows storage location to `AppData\Roaming\Budget_Calendar` for simpler, cleaner directory structure.
+  - Added automatic migration from old storage location to preserve existing data.
+- **UI Refinements:**
+  - Removed Quick-Add floating action button to simplify interface.
+  - Fixed calendar overflow exception when resizing window to wide dimensions.
+  - Reduced default window size from 1280x720 to 900x680 for better content fit.
+  - Removed "Budget Calendar" title from app bar for cleaner header.
+  - Increased text size for income/expense amounts in day entry dialog for better readability.
+  - Reduced top padding and spacing to minimize dead space at top of screen.
+  - Increased font size of day balance amounts on calendar cells from 9-10px to 12-13px for better visibility.
+  - Changed running balance display to always show month-end balance instead of hover-based calculation.
+  - Added tooltip on calendar day hover to show running balance for that specific day (500ms delay).
+- **Settings System:**
+  - Added comprehensive settings dialog accessible via cog icon in app bar.
+  - **Color Customization**: Custom color pickers for income/expense colors in both light and dark modes with 42 Material Design color palette options.
+  - **Display Toggles**: Show/hide month balance and running balance in totals panel.
+  - **Week Start Day**: Configure calendar to start on Sunday, Monday, or Saturday.
+  - All settings persist to JSON storage and apply immediately without app restart.
+  - Settings dialog is responsive (fullscreen on mobile, regular dialog on desktop).
+  - Added "Reset Colors to Defaults" button to restore original color scheme.
+- **Test/Quality:** Refactored settings tests to validate public BudgetStore API only (no private helper coupling), and replaced deprecated color comparisons with 	oARGB32() usage.
+- Implemented draggable panel swapping: totals panel and calendar panel can now be long-press dragged and dropped onto each other to swap positions with snap/highlight feedback.
+- Added date/month header dragging and swap support; the header now behaves like totals/calendar panels and can be reordered via long-press drag/drop.
+- Expanded settings into a budgeting/accessibility/data-management hub: currency symbol, starting balance, monthly budget target, high-contrast mode, text magnification slider, backup snapshot creation, restore-latest-backup, JSON export-to-clipboard, and JSON import with validation.
+- Added entry notes and recurring entry creation options (none / weekly / 2-week / 4-week / monthly with occurrence count), including recurring date generation and monthly end-of-month clamping.
+- Added data-handling failsafes in store layer: safer import parsing, optional pre-import backup, bounded backup retention, and backup metadata persistence.
+- Updated money display to use configurable currency symbol across totals, day entries, and tooltips.
+- Added/updated tests for new settings, recurrence behavior, notes serialization, import validation, and backup/restore roundtrip.
