@@ -1,6 +1,6 @@
 #define AppName "BudgetCalendar"
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "0.1.0"
 #endif
 #ifndef BuildDir
   #define BuildDir "..\\build\\windows\\x64\\runner\\Release"
