@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -24,6 +25,17 @@ const _windowWidthPrefKey = 'window_width';
 const _windowHeightPrefKey = 'window_height';
 const _uiTweaksPrefKey = 'ui_tweaks_v1';
 const _defaultCompactMetricBaseWidth = 620.0;
+const _windowKindTweaks = 'ui_tweaks';
+
+Future<UiTweakConfig> _loadUiTweaksFromPrefs() async {
+  final prefs = await SharedPreferences.getInstance();
+  return UiTweakConfig.fromJsonString(prefs.getString(_uiTweaksPrefKey));
+}
+
+Future<void> _saveUiTweaksToPrefs(UiTweakConfig config) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(_uiTweaksPrefKey, config.toJsonString());
+}
 
 double _compactMetricWidthThreshold(
   double textScaleFactor, {
@@ -35,14 +47,41 @@ double _compactMetricWidthThreshold(
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.linux ||
+          defaultTargetPlatform == TargetPlatform.macOS) &&
+      args.isNotEmpty &&
+      args.first == 'multi_window') {
+    final childController = await WindowController.fromCurrentEngine();
+    final rawArgs = childController.arguments;
+    Map<String, dynamic> parsedArgs = const <String, dynamic>{};
+    if (rawArgs.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawArgs);
+        if (decoded is Map<String, dynamic>) {
+          parsedArgs = decoded;
+        }
+      } catch (_) {}
+    }
+    if (parsedArgs['kind'] == _windowKindTweaks) {
+      final initialTweaks = await _loadUiTweaksFromPrefs();
+      final mainWindowId = parsedArgs['mainWindowId'] as String?;
+      runApp(
+        _UiTweaksWindowApp(
+          initialTweaks: initialTweaks,
+          mainWindowId: mainWindowId,
+        ),
+      );
+      return;
+    }
+  }
   final tweakMode =
       args.contains('-tweak') ||
       args.contains('--tweak') ||
       args.contains('/tweak');
   final prefs = await SharedPreferences.getInstance();
-  final initialTweaks = UiTweakConfig.fromJsonString(
-    prefs.getString(_uiTweaksPrefKey),
-  );
+  final initialTweaks = await _loadUiTweaksFromPrefs();
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
     final savedWidth = prefs.getDouble(_windowWidthPrefKey);
     final savedHeight = prefs.getDouble(_windowHeightPrefKey);
@@ -383,6 +422,60 @@ class BudgetCalendarApp extends StatelessWidget {
   }
 }
 
+class _UiTweaksWindowApp extends StatelessWidget {
+  const _UiTweaksWindowApp({
+    required this.initialTweaks,
+    required this.mainWindowId,
+  });
+
+  final UiTweakConfig initialTweaks;
+  final String? mainWindowId;
+
+  Future<void> _applyAndNotify(UiTweakConfig config) async {
+    await _saveUiTweaksToPrefs(config);
+    if (mainWindowId == null) return;
+    try {
+      final mainWindow = WindowController.fromWindowId(mainWindowId!);
+      await mainWindow.invokeMethod('uiTweaksUpdated', config.toJsonString());
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Budget Calendar - UI Tweak Lab',
+      theme: ThemeData(useMaterial3: true),
+      darkTheme: ThemeData(brightness: Brightness.dark, useMaterial3: true),
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('UI Tweak Lab'),
+          actions: [
+            IconButton(
+              tooltip: 'Close',
+              onPressed: () async {
+                try {
+                  final current = await WindowController.fromCurrentEngine();
+                  await current.hide();
+                } catch (_) {}
+              },
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ),
+        body: _UiTweaksDialog(
+          initial: initialTweaks,
+          onApply: _applyAndNotify,
+          onApplyAndReload: _applyAndNotify,
+          onResetToDefaults: () async {
+            await _applyAndNotify(UiTweakConfig.defaults);
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class BudgetCalendarHome extends StatefulWidget {
   const BudgetCalendarHome({
     super.key,
@@ -653,6 +746,8 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   int _lastMetricsRevision = 0;
   int _uiTweaksRevision = 0;
   late UiTweakConfig _uiTweaks;
+  String? _mainWindowId;
+  WindowController? _tweaksWindowController;
   final Map<String, _MonthSummaryCacheEntry> _monthSummaryCache = {};
 
   static const String _trayMenuShowKey = 'show_window';
@@ -673,6 +768,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     widget.store.addListener(_onStoreChanged);
     if (_isWindowsDesktop) {
       _initWindowSizing();
+      _initMultiWindowBridge();
       if (_lastMinimizeToTray) {
         unawaited(_initTray());
       }
@@ -1363,6 +1459,31 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   }
 
   Future<void> _openUiTweaksDialog(BuildContext context) async {
+    if (_isWindowsDesktop) {
+      try {
+        final controller = _tweaksWindowController;
+        if (controller != null) {
+          await controller.show();
+          return;
+        }
+        final created = await WindowController.create(
+          WindowConfiguration(
+            arguments: jsonEncode(<String, Object?>{
+              'kind': _windowKindTweaks,
+              'mainWindowId': _mainWindowId,
+            }),
+            hiddenAtLaunch: true,
+          ),
+        );
+        _tweaksWindowController = created;
+        await created.show();
+        return;
+      } catch (_) {
+        _tweaksWindowController = null;
+        // Fallback to in-window dialog if multi-window creation fails.
+      }
+    }
+    if (!context.mounted) return;
     await showGeneralDialog<void>(
       context: context,
       barrierLabel: 'UI Tweak Lab',
@@ -1496,8 +1617,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   }
 
   Future<void> _persistUiTweaks() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_uiTweaksPrefKey, _uiTweaks.toJsonString());
+    await _saveUiTweaksToPrefs(_uiTweaks);
   }
 
   Future<void> _setUiTweaks(UiTweakConfig config) async {
@@ -1516,6 +1636,24 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
       _uiTweaksRevision += 1;
       _monthSummaryCache.clear();
     });
+  }
+
+  Future<void> _initMultiWindowBridge() async {
+    try {
+      final current = await WindowController.fromCurrentEngine();
+      _mainWindowId = current.windowId;
+      await current.setWindowMethodHandler((call) async {
+        if (call.method == 'uiTweaksUpdated') {
+          final payload = call.arguments;
+          final config = UiTweakConfig.fromJsonString(
+            payload is String ? payload : null,
+          );
+          await _setUiTweaks(config);
+          _reloadLayoutForTweaks();
+        }
+        return null;
+      });
+    } catch (_) {}
   }
 
   Widget _buildCalendarPanel({

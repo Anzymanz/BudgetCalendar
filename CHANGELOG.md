@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Added true secondary-window support for the UI Tweak Lab on desktop Windows using `desktop_multi_window`: tweak controls can now open in a separate native window and sync applied values back to the main app window.
 - Enhanced UI Tweak Lab usability: added hover descriptions/tooltips for every tweakable control and changed the tweak interface to a draggable floating tool window (separate movable in-app window).
 - Added developer UI tuning mode via launch argument `-tweak`/`--tweak`, with a dedicated "UI Tweak Lab" secondary dialog to edit day-card and metric-card sizing ratios/limits, apply live, force layout reload, reset defaults, and copy current values to clipboard.
 - Increased day-card typography scaling response under magnification: day numbers, entry-count badges, and day-balance text now grow more noticeably at higher text-scale settings while remaining bounded to avoid overflow.
