@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Removed drag-wrapper state toggling during month-page motion to eliminate remaining panel "bulge" artifacts; drag/drop shells now stay structurally stable across transitions.
 - Fixed month-switch "bulge" artifact by preserving a stable panel-shell container even when drag/drop wrappers are temporarily disabled during page motion.
 - Added transition-time UI load shedding for month switches: drag/drop panel wrappers and day hover tooltips are temporarily disabled while PageView scrolling is in motion, reducing build pressure during animated page transitions.
 - Added month-summary caching for page transitions: month income/expense/month-end running balance are now memoized by month and invalidated only on financial-data changes, reducing build-thread spikes during month-switch animations.

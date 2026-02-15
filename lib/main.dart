@@ -983,7 +983,6 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
             orderedPanels.add(
               _buildDraggablePanelSlot(
                 type: _PanelType.date,
-                enableDragDrop: !isPageInMotion,
                 child: _MonthHeader(
                   focusedMonth: month,
                   onPrev: _goToPreviousMonth,
@@ -996,7 +995,6 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
             orderedPanels.add(
               _buildDraggablePanelSlot(
                 type: _PanelType.totals,
-                enableDragDrop: !isPageInMotion,
                 child: _TotalsPanel(
                   store: store,
                   monthIncomePennies: monthIncome,
@@ -1014,7 +1012,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
                   context: context,
                   store: store,
                   month: month,
-                  enableDragDrop: !isPageInMotion,
+                  enableDragDrop: true,
                   enableHoverTooltips: !isPageInMotion,
                 ),
               ),
