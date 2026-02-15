@@ -394,6 +394,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
   bool _windowResizeScheduled = false;
   bool _windowSizingInitialized = false;
+  bool _isPageInMotion = false;
   Timer? _windowPersistDebounce;
   String _lastResizeLayoutKey = '';
   bool _trayInitialized = false;
@@ -828,20 +829,35 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
       builder: (context, _) {
         return Scaffold(
           appBar: _buildTopBar(context),
-          body: PageView.builder(
-            controller: _pageController,
-            physics: enableSwipe
-                ? const PageScrollPhysics()
-                : const NeverScrollableScrollPhysics(),
-            onPageChanged: (index) {
-              // Keep this update non-reactive to avoid an extra full rebuild
-              // right after page animations settle.
-              _focusedMonth = _monthForPageIndex(index);
+          body: NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              if (notification is ScrollStartNotification && !_isPageInMotion) {
+                setState(() {
+                  _isPageInMotion = true;
+                });
+              } else if (notification is ScrollEndNotification &&
+                  _isPageInMotion) {
+                setState(() {
+                  _isPageInMotion = false;
+                });
+              }
+              return false;
             },
-            itemBuilder: (context, pageIndex) {
-              final month = _monthForPageIndex(pageIndex);
-              return _buildMonthView(month);
-            },
+            child: PageView.builder(
+              controller: _pageController,
+              physics: enableSwipe
+                  ? const PageScrollPhysics()
+                  : const NeverScrollableScrollPhysics(),
+              onPageChanged: (index) {
+                // Keep this update non-reactive to avoid an extra full rebuild
+                // right after page animations settle.
+                _focusedMonth = _monthForPageIndex(index);
+              },
+              itemBuilder: (context, pageIndex) {
+                final month = _monthForPageIndex(pageIndex);
+                return _buildMonthView(month, isPageInMotion: _isPageInMotion);
+              },
+            ),
           ),
         );
       },
@@ -941,7 +957,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     );
   }
 
-  Widget _buildMonthView(DateTime month) {
+  Widget _buildMonthView(DateTime month, {required bool isPageInMotion}) {
     final store = widget.store;
     final monthSummary = _getMonthSummary(store, month);
     final monthIncome = monthSummary.monthIncomePennies;
@@ -967,6 +983,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
             orderedPanels.add(
               _buildDraggablePanelSlot(
                 type: _PanelType.date,
+                enableDragDrop: !isPageInMotion,
                 child: _MonthHeader(
                   focusedMonth: month,
                   onPrev: _goToPreviousMonth,
@@ -979,6 +996,7 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
             orderedPanels.add(
               _buildDraggablePanelSlot(
                 type: _PanelType.totals,
+                enableDragDrop: !isPageInMotion,
                 child: _TotalsPanel(
                   store: store,
                   monthIncomePennies: monthIncome,
@@ -996,6 +1014,8 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
                   context: context,
                   store: store,
                   month: month,
+                  enableDragDrop: !isPageInMotion,
+                  enableHoverTooltips: !isPageInMotion,
                 ),
               ),
             );
@@ -1082,7 +1102,11 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   Widget _buildDraggablePanelSlot({
     required _PanelType type,
     required Widget child,
+    bool enableDragDrop = true,
   }) {
+    if (!enableDragDrop) {
+      return child;
+    }
     return DragTarget<_PanelType>(
       onWillAcceptWithDetails: (details) => details.data != type,
       onAcceptWithDetails: (details) => _swapPanels(details.data, type),
@@ -1146,12 +1170,16 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
     required BuildContext context,
     required BudgetStore store,
     required DateTime month,
+    required bool enableDragDrop,
+    required bool enableHoverTooltips,
   }) {
     return _buildDraggablePanelSlot(
       type: _PanelType.calendar,
+      enableDragDrop: enableDragDrop,
       child: _CalendarGrid(
         store: store,
         focusedMonth: month,
+        enableHoverTooltips: enableHoverTooltips,
         onOpenDay: (day) => _openDayDialog(context, store, day),
       ),
     );
@@ -1657,11 +1685,13 @@ class _CalendarGrid extends StatelessWidget {
   const _CalendarGrid({
     required this.store,
     required this.focusedMonth,
+    required this.enableHoverTooltips,
     required this.onOpenDay,
   });
 
   final BudgetStore store;
   final DateTime focusedMonth;
+  final bool enableHoverTooltips;
   final ValueChanged<DateTime> onOpenDay;
 
   @override
@@ -1684,7 +1714,8 @@ class _CalendarGrid extends StatelessWidget {
       symbol: store.currencySymbol,
       decimalDigits: 0,
     );
-    final showHoverRunningBalance = store.showDayRunningBalanceOnHover;
+    final showHoverRunningBalance =
+        enableHoverTooltips && store.showDayRunningBalanceOnHover;
     final hoverRunningBalanceFormat = NumberFormat.currency(
       locale: 'en_GB',
       symbol: store.currencySymbol,
