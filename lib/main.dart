@@ -24,17 +24,31 @@ String formatCurrency(BudgetStore store, int pennies) {
 const _windowWidthPrefKey = 'window_width';
 const _windowHeightPrefKey = 'window_height';
 const _uiTweaksPrefKey = 'ui_tweaks_v1';
+const _uiTweaksDefaultPrefKey = 'ui_tweaks_default_v1';
 const _defaultCompactMetricBaseWidth = 620.0;
 const _windowKindTweaks = 'ui_tweaks';
 
 Future<UiTweakConfig> _loadUiTweaksFromPrefs() async {
   final prefs = await SharedPreferences.getInstance();
-  return UiTweakConfig.fromJsonString(prefs.getString(_uiTweaksPrefKey));
+  if (prefs.containsKey(_uiTweaksPrefKey)) {
+    return UiTweakConfig.fromJsonString(prefs.getString(_uiTweaksPrefKey));
+  }
+  return _loadUiTweaksDefaultFromPrefs();
 }
 
 Future<void> _saveUiTweaksToPrefs(UiTweakConfig config) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString(_uiTweaksPrefKey, config.toJsonString());
+}
+
+Future<UiTweakConfig> _loadUiTweaksDefaultFromPrefs() async {
+  final prefs = await SharedPreferences.getInstance();
+  return UiTweakConfig.fromJsonString(prefs.getString(_uiTweaksDefaultPrefKey));
+}
+
+Future<void> _saveUiTweaksDefaultToPrefs(UiTweakConfig config) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(_uiTweaksDefaultPrefKey, config.toJsonString());
 }
 
 double _compactMetricWidthThreshold(
@@ -440,6 +454,24 @@ class _UiTweaksWindowApp extends StatelessWidget {
     } catch (_) {}
   }
 
+  Future<void> _saveAsDefaultAndNotify(UiTweakConfig config) async {
+    await _saveUiTweaksDefaultToPrefs(config);
+    if (mainWindowId == null) return;
+    try {
+      final mainWindow = WindowController.fromWindowId(mainWindowId!);
+      await mainWindow.invokeMethod(
+        'uiTweaksDefaultUpdated',
+        config.toJsonString(),
+      );
+    } catch (_) {}
+  }
+
+  Future<UiTweakConfig> _resetToDefaultAndNotify() async {
+    final defaults = await _loadUiTweaksDefaultFromPrefs();
+    await _applyAndNotify(defaults);
+    return defaults;
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -467,9 +499,8 @@ class _UiTweaksWindowApp extends StatelessWidget {
           initial: initialTweaks,
           onApply: _applyAndNotify,
           onApplyAndReload: _applyAndNotify,
-          onResetToDefaults: () async {
-            await _applyAndNotify(UiTweakConfig.defaults);
-          },
+          onSaveCurrentAsDefault: _saveAsDefaultAndNotify,
+          onResetToDefaults: _resetToDefaultAndNotify,
         ),
       ),
     );
@@ -1499,9 +1530,13 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
               await _setUiTweaks(config);
               _reloadLayoutForTweaks();
             },
+            onSaveCurrentAsDefault: (config) async {
+              await _saveCurrentUiTweaksAsDefault(config);
+            },
             onResetToDefaults: () async {
               await _resetUiTweaks();
               _reloadLayoutForTweaks();
+              return _uiTweaks;
             },
           ),
         );
@@ -1628,7 +1663,12 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
   }
 
   Future<void> _resetUiTweaks() async {
-    await _setUiTweaks(UiTweakConfig.defaults);
+    final defaults = await _loadUiTweaksDefaultFromPrefs();
+    await _setUiTweaks(defaults);
+  }
+
+  Future<void> _saveCurrentUiTweaksAsDefault(UiTweakConfig config) async {
+    await _saveUiTweaksDefaultToPrefs(config);
   }
 
   void _reloadLayoutForTweaks() {
@@ -1650,6 +1690,9 @@ class _BudgetCalendarHomeState extends State<BudgetCalendarHome>
           );
           await _setUiTweaks(config);
           _reloadLayoutForTweaks();
+        } else if (call.method == 'uiTweaksDefaultUpdated') {
+          // Main window doesn't need an immediate visual update for default
+          // baseline changes, but this acknowledges cross-window sync.
         }
         return null;
       });
@@ -3468,13 +3511,15 @@ class _UiTweaksDialog extends StatefulWidget {
     required this.initial,
     required this.onApply,
     required this.onApplyAndReload,
+    required this.onSaveCurrentAsDefault,
     required this.onResetToDefaults,
   });
 
   final UiTweakConfig initial;
   final Future<void> Function(UiTweakConfig config) onApply;
   final Future<void> Function(UiTweakConfig config) onApplyAndReload;
-  final Future<void> Function() onResetToDefaults;
+  final Future<void> Function(UiTweakConfig config) onSaveCurrentAsDefault;
+  final Future<UiTweakConfig> Function() onResetToDefaults;
 
   @override
   State<_UiTweaksDialog> createState() => _UiTweaksDialogState();
@@ -3884,11 +3929,23 @@ class _UiTweaksDialogState extends State<_UiTweaksDialog> {
               ),
               TextButton(
                 onPressed: () async {
-                  await widget.onResetToDefaults();
-                  if (!mounted) return;
-                  setState(() => _draft = UiTweakConfig.defaults);
+                  await widget.onSaveCurrentAsDefault(_draft);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Current tweak values saved as default.'),
+                    ),
+                  );
                 },
-                child: const Text('Reset Defaults'),
+                child: const Text('Save Current as Default'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final resetConfig = await widget.onResetToDefaults();
+                  if (!mounted) return;
+                  setState(() => _draft = resetConfig);
+                },
+                child: const Text('Reset to Default'),
               ),
               FilledButton.tonal(
                 onPressed: () => widget.onApply(_draft),
