@@ -1,7 +1,10 @@
+[CmdletBinding()]
 param(
   [string]$AppVersion,
   [string]$Configuration = "release",
-  [string]$IsccPath
+  [string]$IsccPath,
+  [Parameter(ValueFromRemainingArguments = $true)]
+  [string[]]$CliArgs
 )
 
 $ErrorActionPreference = "Stop"
@@ -66,6 +69,72 @@ Install Inno Setup 6, add ISCC.exe to PATH, or pass -IsccPath:
 powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1 -IsccPath "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 "@
 }
+
+function Show-Usage {
+  Write-Host @"
+Usage:
+  powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1 [options]
+
+Options (PowerShell style):
+  -AppVersion <semver>
+  -Configuration <release|debug>
+  -IsccPath <path-to-ISCC.exe>
+
+Options (GNU style):
+  --app-version <semver> | --app-version=<semver>
+  --configuration <release|debug> | --configuration=<release|debug>
+  --iscc-path <path> | --iscc-path=<path>
+  --help
+"@
+}
+
+function Apply-GnuStyleArgs {
+  param([string[]]$ArgsToParse)
+
+  if (-not $ArgsToParse -or $ArgsToParse.Count -eq 0) {
+    return
+  }
+
+  $i = 0
+  while ($i -lt $ArgsToParse.Count) {
+    $token = $ArgsToParse[$i]
+    if (-not $token.StartsWith("--")) {
+      throw "Unsupported argument '$token'. Use --help to see supported options."
+    }
+
+    if ($token -eq "--help") {
+      Show-Usage
+      exit 0
+    }
+
+    $key = $token
+    $value = $null
+    if ($token.Contains("=")) {
+      $parts = $token.Split("=", 2)
+      $key = $parts[0]
+      $value = $parts[1]
+    } else {
+      if (($i + 1) -ge $ArgsToParse.Count) {
+        throw "Missing value for argument '$token'."
+      }
+      $value = $ArgsToParse[$i + 1]
+      $i += 1
+    }
+
+    switch ($key) {
+      "--app-version" { $script:AppVersion = $value }
+      "--configuration" { $script:Configuration = $value }
+      "--iscc-path" { $script:IsccPath = $value }
+      default {
+        throw "Unsupported argument '$key'. Use --help to see supported options."
+      }
+    }
+
+    $i += 1
+  }
+}
+
+Apply-GnuStyleArgs -ArgsToParse $CliArgs
 
 if (-not (Test-Path $issPath)) {
   throw "Installer script not found at $issPath"

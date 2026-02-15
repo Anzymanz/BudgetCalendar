@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2026-02-14
+- Installer helper now accepts GNU-style `--` arguments (`--app-version`, `--configuration`, `--iscc-path`, including `--key=value`) in addition to PowerShell-style flags; added `--help` usage output.
 - Windows build stability: added MSVC `/FS` compile flag in `windows/CMakeLists.txt` standard settings to prevent `.pdb` file contention (`C1041`) during parallel debug plugin compilation.
 - Fixed unexpected window-height jumps on dark/light toggle and entry submission by limiting Windows auto-resize triggers to layout-affecting settings only (text scale and totals-card visibility changes).
 - Updated README screenshots and busted image cache by renaming assets to `docs/main-v2.png` and `docs/entry-v2.png`.

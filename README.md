@@ -81,5 +81,11 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1 -Configur
 powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1 -IsccPath "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 ```
 
+GNU-style `--` flags are also supported:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1 --app-version 0.1.0 --configuration release
+powershell -ExecutionPolicy Bypass -File .\scripts\build_installer.ps1 --iscc-path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+```
+
 Installer output:
 - `dist\installer\BudgetCalendar-Setup-v<version>.exe`
