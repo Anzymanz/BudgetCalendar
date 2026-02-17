@@ -1,6 +1,6 @@
 # BudgetCalendar
 
-BudgetCalendar is a Flutter desktop-first budgeting calendar app, ported from the original Python/Tkinter version.
+BudgetCalendar is a Flutter desktop-first budgeting calendar app.
 
 ## Download Installer
 - Get the latest Windows installer from GitHub Releases.
