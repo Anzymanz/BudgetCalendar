@@ -3,9 +3,7 @@
 BudgetCalendar is a Flutter desktop-first budgeting calendar app.
 
 ## Download Installer
-- Get the latest Windows installer from GitHub Releases.
-- Release tag: `0.1`
-- Installer file: `BudgetCalendar-Setup-v0.1.0.exe`
+- Get the latest Windows installer from [Releases](https://github.com/Anzymanz/BudgetCalendar/releases/latest).
 
 ## Screenshots
 ![Main Calendar View](docs/main-v2.png)
